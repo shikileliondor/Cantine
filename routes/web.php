@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\FacturationExportController;
 use App\Livewire\ClasseShow;
 use App\Livewire\ClassesIndex;
 use App\Livewire\EleveForm;
@@ -153,6 +154,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/tarifs', TarifsIndex::class)->name('tarifs.index');
     Route::get('/facturation', FacturationIndex::class)->name('facturation.index');
+    Route::get('/facturation/export/{facture}/pdf', [FacturationExportController::class, 'facturePdf'])
+        ->name('facturation.export.pdf');
+    Route::get('/facturation/export/{facture}/csv', [FacturationExportController::class, 'factureCsv'])
+        ->name('facturation.export.csv');
     Route::get('/parametres', ParametresIndex::class)->name('parametres.index');
 });
 
