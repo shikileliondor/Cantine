@@ -257,6 +257,46 @@
                                             Versé : {{ number_format($factureEleve['total_verse'], 0, ',', ' ') }} FCFA ·
                                             Reste : {{ number_format($factureEleve['reste_a_payer'], 0, ',', ' ') }} FCFA
                                         </p>
+                                        @php
+                                            $versements = $factureEleve['versements'] ?? [];
+                                            $remises = $factureEleve['remises'] ?? [];
+                                            $hasMouvements = count($versements) || count($remises);
+                                        @endphp
+                                        <div class="mt-3 space-y-2 text-xs text-slate-300">
+                                            @if (! $hasMouvements)
+                                                <p class="text-slate-500">Aucun mouvement enregistré pour cette période.</p>
+                                            @endif
+                                            @foreach ($versements as $versement)
+                                                <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2">
+                                                    <div>
+                                                        <p class="font-semibold text-slate-100">Versement</p>
+                                                        <p class="text-slate-400">
+                                                            {{ $versement['date'] ?? 'Date inconnue' }} ·
+                                                            {{ $versement['mode'] ? str_replace('_', ' ', $versement['mode']) : 'Mode non précisé' }}
+                                                            @if (! empty($versement['reference']))
+                                                                · Réf : {{ $versement['reference'] }}
+                                                            @endif
+                                                        </p>
+                                                    </div>
+                                                    <span class="font-semibold text-emerald-300">
+                                                        {{ number_format($versement['montant'], 0, ',', ' ') }} FCFA
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                            @foreach ($remises as $remise)
+                                                <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2">
+                                                    <div>
+                                                        <p class="font-semibold text-slate-100">Remise</p>
+                                                        <p class="text-slate-400">
+                                                            {{ $remise['commentaire'] ?: 'Remise appliquée' }}
+                                                        </p>
+                                                    </div>
+                                                    <span class="font-semibold text-amber-300">
+                                                        {{ $remise['type'] === 'pourcentage' ? $remise['valeur'] . '%' : number_format($remise['valeur'], 0, ',', ' ') . ' FCFA' }}
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 @endforeach
                             @else
