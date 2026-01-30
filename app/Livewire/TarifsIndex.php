@@ -2,13 +2,14 @@
 
 namespace App\Livewire;
 
+use App\Models\Tarif;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class TarifsIndex extends Component
 {
-    public array $tarifs = [];
+    public $tarifs = [];
     public string $classe = '';
     public string $montant = '';
     public string $debut_mois = '';
@@ -37,7 +38,7 @@ class TarifsIndex extends Component
             '12' => 'Décembre',
         ];
         $this->anneesOptions = range($anneeCourante - 1, $anneeCourante + 5);
-        $this->tarifs = session('tarifs', []);
+        $this->tarifs = Tarif::orderByDesc('debut_periode')->get();
     }
 
     public function ajouterTarif(): void
@@ -51,10 +52,8 @@ class TarifsIndex extends Component
             'fin_annee' => ['required', 'integer', Rule::in($this->anneesOptions)],
         ]);
 
-        $debut = sprintf('%04d-%02d', $donnees['debut_annee'], $donnees['debut_mois']);
-        $fin = sprintf('%04d-%02d', $donnees['fin_annee'], $donnees['fin_mois']);
-        $debutDate = Carbon::createFromFormat('Y-m', $debut);
-        $finDate = Carbon::createFromFormat('Y-m', $fin);
+        $debutDate = Carbon::createFromDate((int) $donnees['debut_annee'], (int) $donnees['debut_mois'], 1)->startOfMonth();
+        $finDate = Carbon::createFromDate((int) $donnees['fin_annee'], (int) $donnees['fin_mois'], 1)->endOfMonth();
 
         if ($finDate->lt($debutDate)) {
             $this->addError('fin_mois', 'La fin doit être postérieure ou égale au début.');
@@ -62,17 +61,15 @@ class TarifsIndex extends Component
             return;
         }
 
-        $this->tarifs = [
-            [
-                'classe' => trim($donnees['classe']),
-                'montant_mensuel' => (int) $donnees['montant'],
-                'debut' => $debut,
-                'fin' => $fin,
-            ],
-            ...$this->tarifs,
-        ];
+        Tarif::create([
+            'classe' => trim($donnees['classe']),
+            'montant_mensuel' => $donnees['montant'],
+            'debut_periode' => $debutDate,
+            'fin_periode' => $finDate,
+            'actif' => true,
+        ]);
 
-        session()->put('tarifs', $this->tarifs);
+        $this->tarifs = Tarif::orderByDesc('debut_periode')->get();
 
         $this->reset(['classe', 'montant', 'debut_mois', 'debut_annee', 'fin_mois', 'fin_annee']);
     }

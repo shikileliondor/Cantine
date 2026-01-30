@@ -84,11 +84,13 @@
         @foreach ($tarifs as $tarif)
             <article class="rounded-3xl border border-slate-200 bg-white/90 p-6 dark:border-slate-800 dark:bg-slate-900/70">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ $tarif['classe'] }}</h2>
+                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white">{{ $tarif->classe }}</h2>
                     <span class="rounded-full bg-emerald-500/20 px-2 py-1 text-xs text-emerald-700 dark:text-emerald-200">Actif</span>
                 </div>
-                <p class="mt-4 text-2xl font-semibold text-slate-900 dark:text-white">{{ number_format($tarif['montant_mensuel'], 0, ',', ' ') }} FCFA</p>
-                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Du {{ $tarif['debut'] }} au {{ $tarif['fin'] }}</p>
+                <p class="mt-4 text-2xl font-semibold text-slate-900 dark:text-white">{{ number_format($tarif->montant_mensuel, 0, ',', ' ') }} FCFA</p>
+                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                    Du {{ $tarif->debut_periode?->format('m/Y') }} au {{ $tarif->fin_periode?->format('m/Y') }}
+                </p>
                 <div class="mt-4 flex gap-2">
                     <button class="rounded-2xl border border-slate-300 px-3 py-1 text-sm text-slate-600 transition hover:border-emerald-400 dark:border-slate-700 dark:text-slate-200">
                         Modifier
