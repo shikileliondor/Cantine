@@ -33,14 +33,46 @@
                 </div>
                 <div>
                     <label class="text-xs uppercase tracking-[0.2em] text-slate-500">Période de validité</label>
-                    <div class="mt-2 grid grid-cols-2 gap-3">
-                        <input wire:model="debut" type="month" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
-                        <input wire:model="fin" type="month" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100" />
+                    <div class="mt-2 grid grid-cols-1 gap-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <select wire:model="debut_mois" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                                <option value="">Mois début</option>
+                                @foreach ($moisOptions as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <select wire:model="debut_annee" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                                <option value="">Année début</option>
+                                @foreach ($anneesOptions as $annee)
+                                    <option value="{{ $annee }}">{{ $annee }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <select wire:model="fin_mois" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                                <option value="">Mois fin</option>
+                                @foreach ($moisOptions as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <select wire:model="fin_annee" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                                <option value="">Année fin</option>
+                                @foreach ($anneesOptions as $annee)
+                                    <option value="{{ $annee }}">{{ $annee }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                     </div>
-                    @error('debut')
+                    @error('debut_mois')
                         <p class="mt-2 text-xs text-rose-500 dark:text-rose-300">{{ $message }}</p>
                     @enderror
-                    @error('fin')
+                    @error('debut_annee')
+                        <p class="mt-2 text-xs text-rose-500 dark:text-rose-300">{{ $message }}</p>
+                    @enderror
+                    @error('fin_mois')
+                        <p class="mt-2 text-xs text-rose-500 dark:text-rose-300">{{ $message }}</p>
+                    @enderror
+                    @error('fin_annee')
                         <p class="mt-2 text-xs text-rose-500 dark:text-rose-300">{{ $message }}</p>
                     @enderror
                 </div>
