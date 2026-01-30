@@ -5,22 +5,36 @@ namespace Database\Seeders;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class UsersSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::factory()->create([
-            'name' => 'Admin Cantine',
-            'email' => 'admin@cantine.test',
-            'password' => Hash::make('password'),
-        ]);
+        $users = SeedDataReader::read('users.json');
 
-        $adminRole = Role::query()->where('nom', 'admin')->first();
+        foreach ($users as $userData) {
+            if (!is_array($userData)) {
+                continue;
+            }
 
-        if ($adminRole) {
-            $admin->roles()->attach($adminRole);
+            $roles = $userData['roles'] ?? [];
+
+            unset($userData['roles']);
+
+            $user = User::query()->create($userData);
+
+            if (!is_array($roles) || $roles === []) {
+                continue;
+            }
+
+            $roleIds = Role::query()
+                ->whereIn('nom', $roles)
+                ->pluck('id')
+                ->all();
+
+            if ($roleIds !== []) {
+                $user->roles()->attach($roleIds);
+            }
         }
     }
 }
