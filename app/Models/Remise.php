@@ -12,10 +12,12 @@ class Remise extends Model
 
     protected $fillable = [
         'eleve_id',
+        'facture_id',
         'libelle',
         'type_remise',
         'valeur',
         'actif',
+        'commentaire',
     ];
 
     protected $casts = [
@@ -26,5 +28,10 @@ class Remise extends Model
     public function eleve(): BelongsTo
     {
         return $this->belongsTo(Eleve::class);
+    }
+
+    public function facture(): BelongsTo
+    {
+        return $this->belongsTo(Facture::class);
     }
 }

@@ -2,15 +2,12 @@
 
 namespace App\Livewire;
 
-use App\Models\AnneeScolaire;
-use App\Models\Classe;
 use App\Models\Eleve;
 use App\Models\Facture;
-use App\Models\NoteEleve;
 use App\Models\Paiement;
+use App\Models\Remise;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -18,25 +15,12 @@ class FacturationIndex extends Component
 {
     use WithPagination;
 
-    public string $periodeDebut = '';
-    public string $periodeFin = '';
     public string $eleveFilter = '';
     public string $statutFilter = '';
-    public string $nomRecherche = '';
-    public string $classeRecherche = '';
-    public string $classeFilter = '';
     public int $perPage = 10;
 
     public ?int $factureSelectionneeId = null;
     public ?int $eleveSelectionneId = null;
-    public ?int $noteEleveId = null;
-
-    public string $noteType = 'interne';
-    public string $noteContenu = '';
-
-    public array $facturesSource = [];
-    public array $moisDisponibles = [];
-    public array $elevesSource = [];
 
     public array $versementForm = [
         'montant' => '',
@@ -52,133 +36,33 @@ class FacturationIndex extends Component
         'commentaire' => '',
     ];
 
-    public string $remiseRapideType = 'pourcentage';
-    public string $remiseRapideValeur = '10';
-
     protected $paginationTheme = 'tailwind';
-
-    protected $rules = [
-        'noteType' => 'required|string|max:50',
-        'noteContenu' => 'required|string|min:3',
-    ];
 
     public function mount(): void
     {
-        $anneeActive = AnneeScolaire::active();
-        $anneeDebut = $anneeActive?->annee_debut ?? (int) now()->format('Y');
-        $anneeFin = $anneeActive?->annee_fin ?? $anneeDebut + 1;
-        $moisBase = $anneeActive?->mois_personnalises ?? [
-            'Septembre',
-            'Octobre',
-            'Novembre',
-            'Décembre',
-            'Janvier',
-            'Février',
-            'Mars',
-            'Avril',
-            'Mai',
-            'Juin',
-        ];
-
-        $this->moisDisponibles = collect($moisBase)
-            ->map(fn (string $mois) => $this->formaterPeriode($mois, $anneeDebut, $anneeFin))
-            ->values()
-            ->all();
-
-        $this->chargerFacturesSource();
-
-        $factureInitiale = $this->factures->first(fn (array $facture) => ! empty($facture['id']));
+        $factureInitiale = $this->factures->first();
         $this->factureSelectionneeId = $factureInitiale['id'] ?? null;
         $this->eleveSelectionneId = $factureInitiale['eleve_id'] ?? null;
-    }
-
-    public function getClassesProperty(): Collection
-    {
-        return Classe::query()
-            ->orderBy('niveau')
-            ->orderBy('nom')
-            ->get();
+        $this->versementForm['date'] = now()->toDateString();
     }
 
     public function getFacturesProperty(): Collection
     {
-        $facturesFiltrees = collect($this->facturesSource)
-            ->map(fn (array $facture) => $this->calculerFacture($facture))
-            ->when($this->periodeDebut !== '' || $this->periodeFin !== '', function (Collection $collection) {
-                return $collection->filter(function (array $facture) {
-                    $mois = $this->normaliserMois($facture['periode']);
-                    if (! $mois) {
-                        return true;
-                    }
+        $query = Facture::query()
+            ->with(['eleve', 'paiements', 'remises'])
+            ->orderByDesc('mois');
 
-                    $debut = $this->periodeDebut ? $this->normaliserMois($this->periodeDebut) : null;
-                    $fin = $this->periodeFin ? $this->normaliserMois($this->periodeFin) : null;
+        if ($this->eleveFilter !== '') {
+            $query->where('eleve_id', $this->eleveFilter);
+        }
 
-                    if ($debut && $mois < $debut) {
-                        return false;
-                    }
+        $factures = $query->get()->map(fn (Facture $facture) => $this->transformerFacture($facture));
 
-                    if ($fin && $mois > $fin) {
-                        return false;
-                    }
+        if ($this->statutFilter !== '') {
+            $factures = $factures->filter(fn (array $facture) => $facture['statut'] === $this->statutFilter);
+        }
 
-                    return true;
-                });
-            })
-            ->when($this->statutFilter !== '', function (Collection $collection) {
-                return $collection->filter(fn (array $facture) => $facture['statut'] === $this->statutFilter);
-            });
-
-        $afficherLignesVides = $this->periodeDebut === '' && $this->periodeFin === '' && $this->statutFilter === '';
-
-        $eleves = collect($this->elevesSource)
-            ->when($this->classeFilter !== '', function (Collection $collection) {
-                return $collection->filter(fn (array $eleve) => (string) $eleve['classe_id'] === (string) $this->classeFilter);
-            })
-            ->when($this->eleveFilter !== '', function (Collection $collection) {
-                return $collection->filter(function (array $eleve) {
-                    return Str::of($eleve['nom'])
-                        ->lower()
-                        ->contains(Str::of($this->eleveFilter)->lower());
-                });
-            });
-
-        return $eleves
-            ->map(function (array $eleve) use ($facturesFiltrees, $afficherLignesVides) {
-                $facture = $facturesFiltrees
-                    ->where('eleve_id', $eleve['id'])
-                    ->sortByDesc(fn (array $factureItem) => $factureItem['mois_sort'] ?? '')
-                    ->first();
-
-                if ($facture) {
-                    return $facture;
-                }
-
-                if (! $afficherLignesVides) {
-                    return null;
-                }
-
-                return [
-                    'id' => null,
-                    'eleve_id' => $eleve['id'],
-                    'eleve' => $eleve['nom'],
-                    'classe' => $eleve['classe'],
-                    'classe_id' => $eleve['classe_id'],
-                    'periode' => 'Aucune facture',
-                    'mois_sort' => null,
-                    'montant_brut' => 0,
-                    'total_remises' => 0,
-                    'net_a_payer' => 0,
-                    'total_verse' => 0,
-                    'reste_a_payer' => 0,
-                    'statut' => 'a_creer',
-                    'workflow' => null,
-                    'remises' => [],
-                    'versements' => [],
-                ];
-            })
-            ->filter()
-            ->values();
+        return $factures->values();
     }
 
     public function getFacturesPaginatedProperty(): LengthAwarePaginator
@@ -195,7 +79,18 @@ class FacturationIndex extends Component
 
     public function getElevesProperty(): Collection
     {
-        return collect($this->elevesSource);
+        return Eleve::query()
+            ->orderBy('nom')
+            ->orderBy('prenom')
+            ->get()
+            ->map(function (Eleve $eleve) {
+                $nomEleve = trim(($eleve->prenom ?? '') . ' ' . ($eleve->nom ?? ''));
+
+                return [
+                    'id' => $eleve->id,
+                    'nom' => $nomEleve !== '' ? $nomEleve : ($eleve->nom ?? 'Élève'),
+                ];
+            });
     }
 
     public function getFactureSelectionneeProperty(): ?array
@@ -204,11 +99,11 @@ class FacturationIndex extends Component
             return null;
         }
 
-        return $this->facturesSource
-            ? collect($this->facturesSource)
-                ->map(fn (array $facture) => $this->calculerFacture($facture))
-                ->firstWhere('id', $this->factureSelectionneeId)
-            : null;
+        $facture = Facture::query()
+            ->with(['eleve', 'paiements', 'remises'])
+            ->find($this->factureSelectionneeId);
+
+        return $facture ? $this->transformerFacture($facture) : null;
     }
 
     public function getEleveSelectionneProperty(): ?array
@@ -217,9 +112,12 @@ class FacturationIndex extends Component
             return null;
         }
 
-        $factures = collect($this->facturesSource)
-            ->filter(fn (array $facture) => $facture['eleve_id'] === $this->eleveSelectionneId)
-            ->map(fn (array $facture) => $this->calculerFacture($facture))
+        $factures = Facture::query()
+            ->with(['eleve', 'paiements', 'remises'])
+            ->where('eleve_id', $this->eleveSelectionneId)
+            ->orderByDesc('mois')
+            ->get()
+            ->map(fn (Facture $facture) => $this->transformerFacture($facture))
             ->values();
 
         if ($factures->isEmpty()) {
@@ -248,43 +146,14 @@ class FacturationIndex extends Component
     {
         $this->factureSelectionneeId = $factureId;
 
-        $facture = collect($this->facturesSource)->firstWhere('id', $factureId);
-        if ($facture) {
-            $this->eleveSelectionneId = $facture['eleve_id'];
-        }
+        $facture = Facture::query()->find($factureId);
+        $this->eleveSelectionneId = $facture?->eleve_id;
+        $this->versementForm['date'] = now()->toDateString();
     }
 
     public function appliquerFiltres(): void
     {
-        $this->eleveFilter = trim($this->nomRecherche);
-        $this->classeFilter = $this->classeRecherche;
         $this->resetPage();
-    }
-
-    public function openNoteModal(int $eleveId): void
-    {
-        $this->resetValidation();
-        $this->noteEleveId = $eleveId;
-        $this->noteType = 'interne';
-        $this->noteContenu = '';
-    }
-
-    public function saveNote(): void
-    {
-        $this->validate();
-
-        if (! $this->noteEleveId) {
-            return;
-        }
-
-        NoteEleve::create([
-            'eleve_id' => $this->noteEleveId,
-            'type_note' => $this->noteType,
-            'contenu' => $this->noteContenu,
-        ]);
-
-        $this->noteEleveId = null;
-        $this->noteContenu = '';
     }
 
     public function updatedFactureSelectionneeId(?int $value): void
@@ -293,10 +162,8 @@ class FacturationIndex extends Component
             return;
         }
 
-        $facture = collect($this->facturesSource)->firstWhere('id', $value);
-        if ($facture) {
-            $this->eleveSelectionneId = $facture['eleve_id'];
-        }
+        $facture = Facture::query()->find($value);
+        $this->eleveSelectionneId = $facture?->eleve_id;
     }
 
     public function updatedEleveSelectionneId(?int $value): void
@@ -305,14 +172,12 @@ class FacturationIndex extends Component
             return;
         }
 
-        $facture = collect($this->facturesSource)
-            ->filter(fn (array $facture) => $facture['eleve_id'] === $value)
-            ->sortByDesc(fn (array $facture) => $facture['mois_sort'] ?? '')
+        $facture = Facture::query()
+            ->where('eleve_id', $value)
+            ->orderByDesc('mois')
             ->first();
-        if ($facture) {
-            $this->factureSelectionneeId = $facture['id'];
-            $this->eleveFilter = $facture['eleve'];
-        }
+
+        $this->factureSelectionneeId = $facture?->id;
     }
 
     public function ajouterVersement(): void
@@ -326,30 +191,32 @@ class FacturationIndex extends Component
             return;
         }
 
-        $this->facturesSource = collect($this->facturesSource)->map(function (array $facture) use ($montant) {
-            if ($facture['id'] !== $this->factureSelectionneeId) {
-                return $facture;
-            }
+        $facture = Facture::query()->with(['paiements', 'remises'])->find($this->factureSelectionneeId);
+        if (! $facture) {
+            return;
+        }
 
-            $calculee = $this->calculerFacture($facture);
-            if ($montant > $calculee['reste_a_payer']) {
-                return $facture;
-            }
+        $snapshot = $this->transformerFacture($facture);
+        if ($montant > $snapshot['reste_a_payer']) {
+            return;
+        }
 
-            $facture['versements'][] = [
-                'montant' => $montant,
-                'date' => $this->versementForm['date'] ?: now()->toDateString(),
-                'mode' => $this->versementForm['mode'],
-                'reference' => $this->versementForm['reference'],
-                'commentaire' => $this->versementForm['commentaire'],
-            ];
+        Paiement::create([
+            'eleve_id' => $facture->eleve_id,
+            'facture_id' => $facture->id,
+            'mois' => $facture->mois,
+            'montant' => $montant,
+            'date_paiement' => $this->versementForm['date'] ?: now()->toDateString(),
+            'mode_paiement' => $this->versementForm['mode'],
+            'reference' => $this->versementForm['reference'],
+            'commentaire' => $this->versementForm['commentaire'] ?: null,
+        ]);
 
-            return $facture;
-        })->all();
+        $this->recalculerFacture($facture);
 
         $this->versementForm = [
             'montant' => '',
-            'date' => '',
+            'date' => now()->toDateString(),
             'mode' => 'especes',
             'reference' => '',
             'commentaire' => '',
@@ -367,19 +234,26 @@ class FacturationIndex extends Component
             return;
         }
 
-        $this->facturesSource = collect($this->facturesSource)->map(function (array $facture) use ($valeur) {
-            if ($facture['id'] !== $this->factureSelectionneeId) {
-                return $facture;
-            }
+        $facture = Facture::query()->with('remises')->find($this->factureSelectionneeId);
+        if (! $facture) {
+            return;
+        }
 
-            $facture['remises'][] = [
-                'type' => $this->remiseForm['type'],
-                'valeur' => $valeur,
-                'commentaire' => $this->remiseForm['commentaire'],
-            ];
+        if ($this->remiseForm['type'] === 'pourcentage') {
+            $valeur = min($valeur, 100);
+        }
 
-            return $facture;
-        })->all();
+        Remise::create([
+            'eleve_id' => $facture->eleve_id,
+            'facture_id' => $facture->id,
+            'libelle' => $this->remiseForm['commentaire'] ?: 'Remise facture',
+            'type_remise' => $this->remiseForm['type'] === 'pourcentage' ? 'pourcentage' : 'fixe',
+            'valeur' => $valeur,
+            'actif' => true,
+            'commentaire' => $this->remiseForm['commentaire'] ?: null,
+        ]);
+
+        $this->recalculerFacture($facture);
 
         $this->remiseForm = [
             'type' => 'pourcentage',
@@ -388,144 +262,94 @@ class FacturationIndex extends Component
         ];
     }
 
-    public function encaisserSolde(): void
+    private function transformerFacture(Facture $facture): array
     {
-        if (! $this->factureSelectionneeId) {
-            return;
+        $montantBrut = (int) round($facture->montant_mensuel);
+        $remises = $facture->remises->map(fn (Remise $remise) => [
+            'type' => $remise->type_remise,
+            'valeur' => (int) round($remise->valeur),
+            'commentaire' => $remise->commentaire ?: $remise->libelle,
+            'date' => $remise->created_at?->toDateString(),
+        ]);
+
+        if ($remises->isEmpty() && $facture->montant_remise > 0) {
+            $remises = collect([[
+                'type' => 'fixe',
+                'valeur' => (int) round($facture->montant_remise),
+                'commentaire' => 'Remise facture',
+                'date' => $facture->updated_at?->toDateString(),
+            ]]);
         }
 
-        $facture = $this->factureSelectionnee;
-        if (! $facture) {
-            return;
-        }
-
-        $reste = (int) $facture['reste_a_payer'];
-        if ($reste <= 0) {
-            return;
-        }
-
-        $this->versementForm = [
-            'montant' => (string) $reste,
-            'date' => now()->toDateString(),
-            'mode' => $this->versementForm['mode'] ?: 'especes',
-            'reference' => $this->versementForm['reference'],
-            'commentaire' => 'Encaissement du reste à payer',
-        ];
-
-        $this->ajouterVersement();
-    }
-
-    public function appliquerRemiseRapide(): void
-    {
-        if (! $this->factureSelectionneeId) {
-            return;
-        }
-
-        $facture = $this->factureSelectionnee;
-        if (! $facture) {
-            return;
-        }
-
-        $valeur = (int) $this->remiseRapideValeur;
-        if ($valeur <= 0) {
-            return;
-        }
-
-        if ($this->remiseRapideType === 'pourcentage') {
-            $valeur = min($valeur, 100);
-        } else {
-            $valeur = min($valeur, (int) $facture['montant_brut']);
-        }
-
-        $this->facturesSource = collect($this->facturesSource)->map(function (array $factureItem) use ($valeur) {
-            if ($factureItem['id'] !== $this->factureSelectionneeId) {
-                return $factureItem;
+        $totalRemises = $remises->sum(function (array $remise) use ($montantBrut) {
+            if ($remise['type'] === 'pourcentage') {
+                return (int) round($montantBrut * ($remise['valeur'] / 100));
             }
 
-            $factureItem['remises'][] = [
-                'type' => $this->remiseRapideType,
-                'valeur' => $valeur,
-                'commentaire' => 'Remise rapide',
-            ];
+            return (int) $remise['valeur'];
+        });
 
-            return $factureItem;
-        })->all();
-    }
-
-    private function calculerFacture(array $facture): array
-    {
-        $totalRemises = collect($facture['remises'])
-            ->sum(function (array $remise) use ($facture) {
-                if ($remise['type'] === 'pourcentage') {
-                    return (int) round($facture['montant_brut'] * ($remise['valeur'] / 100));
-                }
-
-                return (int) $remise['valeur'];
-            });
-
-        $netAPayer = max($facture['montant_brut'] - $totalRemises, 0);
-        $totalVerse = collect($facture['versements'])->sum('montant');
+        $netAPayer = max($montantBrut - $totalRemises, 0);
+        $totalVerse = (int) round($facture->paiements->sum('montant'));
         $reste = max($netAPayer - $totalVerse, 0);
+        $statut = $this->statutAutomatique($netAPayer, $totalVerse);
 
-        $statut = $this->statutAutomatique($facture['workflow'] ?? null, $netAPayer, $totalVerse);
-
-        return array_merge($facture, [
+        return [
+            'id' => $facture->id,
+            'eleve_id' => $facture->eleve_id,
+            'eleve' => trim(($facture->eleve?->prenom ?? '') . ' ' . ($facture->eleve?->nom ?? '')) ?: 'Élève',
+            'periode' => $facture->mois?->translatedFormat('m/Y') ?? '',
+            'montant_brut' => $montantBrut,
             'total_remises' => $totalRemises,
             'net_a_payer' => $netAPayer,
             'total_verse' => $totalVerse,
             'reste_a_payer' => $reste,
             'statut' => $statut,
-        ]);
+            'versements' => $facture->paiements->map(fn (Paiement $paiement) => [
+                'montant' => (int) round($paiement->montant),
+                'date' => $paiement->date_paiement?->toDateString(),
+                'mode' => $paiement->mode_paiement,
+                'reference' => $paiement->reference,
+                'commentaire' => $paiement->commentaire,
+            ])->all(),
+            'remises' => $remises->all(),
+        ];
     }
 
-    private function statutAutomatique(?string $workflow, int $net, int $verse): string
+    private function statutAutomatique(int $net, int $verse): string
     {
         if ($net <= 0) {
-            return 'non_concernee';
-        }
-
-        if ($verse <= 0 && in_array($workflow, ['brouillon', 'validee', 'envoyee'], true)) {
-            return $workflow;
+            return 'a_jour';
         }
 
         if ($verse <= 0) {
-            return 'impayee';
+            return 'retard';
         }
 
         if ($verse < $net) {
-            return 'partiellement_payee';
+            return 'partiel';
         }
 
-        return 'payee';
+        return 'a_jour';
     }
 
     public function statutBadge(?string $statut): array
     {
         return match ($statut) {
-            'payee' => [
-                'label' => 'Soldé',
+            'a_jour' => [
+                'label' => 'Soldée',
                 'classes' => 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
                 'dot' => 'bg-emerald-400',
             ],
-            'partiellement_payee' => [
+            'partiel' => [
                 'label' => 'Partiel',
                 'classes' => 'bg-amber-500/10 text-amber-700 dark:text-amber-200',
                 'dot' => 'bg-amber-300',
             ],
-            'impayee' => [
-                'label' => 'Impayé',
+            'retard' => [
+                'label' => 'Impayée',
                 'classes' => 'bg-rose-500/10 text-rose-700 dark:text-rose-200',
                 'dot' => 'bg-rose-400',
-            ],
-            'non_concernee' => [
-                'label' => 'Non concerné',
-                'classes' => 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-                'dot' => 'bg-slate-400',
-            ],
-            'a_creer' => [
-                'label' => 'À créer',
-                'classes' => 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-                'dot' => 'bg-slate-400',
             ],
             default => [
                 'label' => 'Autre',
@@ -535,134 +359,32 @@ class FacturationIndex extends Component
         };
     }
 
-    private function normaliserMois(string $periode): ?string
-    {
-        $valeur = Str::of($periode)->trim()->lower()->replace(['/', '-', '_'], ' ')->__toString();
-
-        if (preg_match('/(\d{4})-(\d{2})/', $valeur, $matches)) {
-            return $matches[0];
-        }
-
-        if (preg_match('/(\d{4})/', $valeur, $matches) && preg_match('/(janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)/', $valeur, $moisMatch)) {
-            $mois = [
-                'janvier' => '01',
-                'fevrier' => '02',
-                'février' => '02',
-                'mars' => '03',
-                'avril' => '04',
-                'mai' => '05',
-                'juin' => '06',
-                'juillet' => '07',
-                'aout' => '08',
-                'août' => '08',
-                'septembre' => '09',
-                'octobre' => '10',
-                'novembre' => '11',
-                'decembre' => '12',
-                'décembre' => '12',
-            ];
-
-            return $matches[1] . '-' . $mois[$moisMatch[1]];
-        }
-
-        return null;
-    }
-
-    private function formaterPeriode(string $mois, int $anneeDebut, int $anneeFin): string
-    {
-        $moisNormalise = Str::of($mois)->trim()->lower()->__toString();
-        $moisDebutAnnee = ['septembre', 'octobre', 'novembre', 'decembre', 'décembre'];
-        $annee = in_array($moisNormalise, $moisDebutAnnee, true) ? $anneeDebut : $anneeFin;
-
-        return Str::of($mois)->trim()->ucfirst()->__toString() . ' ' . $annee;
-    }
-
     public function render()
     {
         return view('livewire.facturation-index')->layout('layouts.app', ['header' => 'Facturation']);
     }
 
-    private function chargerFacturesSource(): void
+    private function recalculerFacture(Facture $facture): void
     {
-        $this->elevesSource = Eleve::query()
-            ->with('classe')
-            ->orderBy('nom')
-            ->orderBy('prenom')
-            ->get()
-            ->map(function (Eleve $eleve) {
-                $nomEleve = trim(($eleve->prenom ?? '') . ' ' . ($eleve->nom ?? ''));
+        $facture->load(['paiements', 'remises']);
 
-                return [
-                    'id' => $eleve->id,
-                    'nom' => $nomEleve !== '' ? $nomEleve : ($eleve->nom ?? 'Élève'),
-                    'classe' => $eleve->classe?->nom ?? '—',
-                    'classe_id' => $eleve->classe_id,
-                ];
-            })
-            ->all();
+        $montantBrut = (int) round($facture->montant_mensuel);
+        $totalRemises = $facture->remises->sum(function (Remise $remise) use ($montantBrut) {
+            if ($remise->type_remise === 'pourcentage') {
+                return (int) round($montantBrut * ($remise->valeur / 100));
+            }
 
-        $paiements = Paiement::query()
-            ->get()
-            ->groupBy(function (Paiement $paiement) {
-                if ($paiement->facture_id) {
-                    return 'facture:' . $paiement->facture_id;
-                }
+            return (int) round($remise->valeur);
+        });
 
-                $moisKey = $paiement->mois?->format('Y-m') ?? 'inconnu';
+        $netAPayer = max($montantBrut - $totalRemises, 0);
+        $totalVerse = (int) round($facture->paiements->sum('montant'));
+        $statut = $this->statutAutomatique($netAPayer, $totalVerse);
 
-                return 'eleve:' . $paiement->eleve_id . '|mois:' . $moisKey;
-            });
-
-        $this->facturesSource = Facture::query()
-            ->with(['eleve.classe'])
-            ->orderBy('mois')
-            ->get()
-            ->map(function (Facture $facture) use ($paiements) {
-                $eleve = $facture->eleve;
-                $nomEleve = trim(($eleve?->prenom ?? '') . ' ' . ($eleve?->nom ?? ''));
-                $nomEleve = $nomEleve !== '' ? $nomEleve : ($eleve?->nom ?? 'Élève');
-
-                $moisFacture = $facture->mois?->locale('fr')->translatedFormat('F Y') ?? '';
-                $moisKey = $facture->mois?->format('Y-m') ?? null;
-
-                $remises = [];
-                if ($facture->montant_remise > 0) {
-                    $remises[] = [
-                        'type' => 'montant',
-                        'valeur' => (int) round($facture->montant_remise),
-                        'commentaire' => 'Remise facture',
-                    ];
-                }
-
-                $paiementsFacture = collect()
-                    ->merge($paiements->get('facture:' . $facture->id, collect()))
-                    ->when($moisKey, fn (Collection $collection) => $collection->merge(
-                        $paiements->get('eleve:' . $facture->eleve_id . '|mois:' . $moisKey, collect())
-                    ))
-                    ->unique('id')
-                    ->values()
-                    ->map(fn (Paiement $paiement) => [
-                        'montant' => (int) round($paiement->montant),
-                        'date' => $paiement->date_paiement?->toDateString(),
-                        'mode' => $paiement->mode_paiement,
-                        'reference' => $paiement->reference,
-                    ])
-                    ->all();
-
-                return [
-                    'id' => $facture->id,
-                    'eleve_id' => $facture->eleve_id,
-                    'eleve' => $nomEleve,
-                    'classe' => $eleve?->classe?->nom ?? '—',
-                    'classe_id' => $eleve?->classe_id,
-                    'periode' => $moisFacture !== '' ? $moisFacture : ($moisKey ?? ''),
-                    'mois_sort' => $moisKey,
-                    'montant_brut' => (int) round($facture->montant_mensuel),
-                    'workflow' => null,
-                    'remises' => $remises,
-                    'versements' => $paiementsFacture,
-                ];
-            })
-            ->all();
+        $facture->update([
+            'montant_remise' => $totalRemises,
+            'montant_total' => $netAPayer,
+            'statut' => $statut,
+        ]);
     }
 }
