@@ -14,6 +14,7 @@ class FacturationIndex extends Component
     public string $statutFilter = '';
 
     public ?int $factureSelectionneeId = null;
+    public ?int $eleveSelectionneId = null;
 
     public array $facturesSource = [];
 
@@ -36,6 +37,7 @@ class FacturationIndex extends Component
         $this->facturesSource = [
             [
                 'id' => 1,
+                'eleve_id' => 101,
                 'eleve' => 'Amina Diallo',
                 'periode' => 'Mars 2025',
                 'montant_brut' => 35000,
@@ -49,6 +51,7 @@ class FacturationIndex extends Component
             ],
             [
                 'id' => 2,
+                'eleve_id' => 102,
                 'eleve' => 'Idrissa Koné',
                 'periode' => 'Mars 2025',
                 'montant_brut' => 28000,
@@ -60,6 +63,7 @@ class FacturationIndex extends Component
             ],
             [
                 'id' => 3,
+                'eleve_id' => 103,
                 'eleve' => 'Sokhna Ndiaye',
                 'periode' => 'Avril 2025',
                 'montant_brut' => 35000,
@@ -72,6 +76,7 @@ class FacturationIndex extends Component
         ];
 
         $this->factureSelectionneeId = $this->facturesSource[0]['id'] ?? null;
+        $this->eleveSelectionneId = $this->facturesSource[0]['eleve_id'] ?? null;
     }
 
     public function getFacturesProperty(): Collection
@@ -124,9 +129,59 @@ class FacturationIndex extends Component
             : null;
     }
 
+    public function getEleveSelectionneProperty(): ?array
+    {
+        if (! $this->eleveSelectionneId) {
+            return null;
+        }
+
+        $factures = collect($this->facturesSource)
+            ->filter(fn (array $facture) => $facture['eleve_id'] === $this->eleveSelectionneId)
+            ->map(fn (array $facture) => $this->calculerFacture($facture))
+            ->values();
+
+        if ($factures->isEmpty()) {
+            return null;
+        }
+
+        $totalBrut = $factures->sum('montant_brut');
+        $totalRemises = $factures->sum('total_remises');
+        $totalNet = $factures->sum('net_a_payer');
+        $totalVerse = $factures->sum('total_verse');
+        $totalReste = $factures->sum('reste_a_payer');
+
+        return [
+            'id' => $this->eleveSelectionneId,
+            'nom' => $factures->first()['eleve'],
+            'factures' => $factures->all(),
+            'total_brut' => $totalBrut,
+            'total_remises' => $totalRemises,
+            'total_net' => $totalNet,
+            'total_verse' => $totalVerse,
+            'total_reste' => $totalReste,
+        ];
+    }
+
     public function selectionnerFacture(int $factureId): void
     {
         $this->factureSelectionneeId = $factureId;
+
+        $facture = collect($this->facturesSource)->firstWhere('id', $factureId);
+        if ($facture) {
+            $this->eleveSelectionneId = $facture['eleve_id'];
+        }
+    }
+
+    public function updatedFactureSelectionneeId(?int $value): void
+    {
+        if (! $value) {
+            return;
+        }
+
+        $facture = collect($this->facturesSource)->firstWhere('id', $value);
+        if ($facture) {
+            $this->eleveSelectionneId = $facture['eleve_id'];
+        }
     }
 
     public function ajouterVersement(): void

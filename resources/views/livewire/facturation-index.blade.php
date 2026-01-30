@@ -120,7 +120,46 @@
             @if ($this->factureSelectionnee)
                 @php
                     $facture = $this->factureSelectionnee;
+                    $eleveSelectionne = $this->eleveSelectionne;
                 @endphp
+                @if ($eleveSelectionne)
+                    <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Fiche élève</p>
+                                <h2 class="mt-2 text-2xl font-semibold text-white">{{ $eleveSelectionne['nom'] }}</h2>
+                                <p class="text-sm text-slate-400">Historique des factures et paiements</p>
+                            </div>
+                            <div class="grid gap-2 text-sm text-slate-200 sm:grid-cols-2">
+                                <div class="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3">
+                                    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Net total</p>
+                                    <p class="mt-1 font-semibold">{{ number_format($eleveSelectionne['total_net'], 0, ',', ' ') }} FCFA</p>
+                                </div>
+                                <div class="rounded-2xl border border-slate-800 bg-slate-950 px-4 py-3">
+                                    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Versements</p>
+                                    <p class="mt-1 font-semibold text-emerald-200">{{ number_format($eleveSelectionne['total_verse'], 0, ',', ' ') }} FCFA</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 grid gap-3">
+                            @foreach ($eleveSelectionne['factures'] as $factureEleve)
+                                <div class="rounded-2xl border border-slate-800 bg-slate-950 p-4">
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p class="text-sm font-semibold text-white">{{ $factureEleve['periode'] }}</p>
+                                            <p class="text-xs text-slate-400">Net : {{ number_format($factureEleve['net_a_payer'], 0, ',', ' ') }} FCFA</p>
+                                        </div>
+                                        <div class="text-xs text-slate-400">
+                                            Versé : <span class="font-semibold text-emerald-200">{{ number_format($factureEleve['total_verse'], 0, ',', ' ') }} FCFA</span>
+                                            · Reste : <span class="font-semibold text-rose-200">{{ number_format($factureEleve['reste_a_payer'], 0, ',', ' ') }} FCFA</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
@@ -175,6 +214,13 @@
                         </div>
                         <div class="mt-6 space-y-3">
                             <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Ajouter une remise</p>
+                            @if ($eleveSelectionne)
+                                <select wire:model="factureSelectionneeId" class="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                                    @foreach ($eleveSelectionne['factures'] as $factureEleve)
+                                        <option value="{{ $factureEleve['id'] }}">{{ $factureEleve['periode'] }} · {{ number_format($factureEleve['net_a_payer'], 0, ',', ' ') }} FCFA</option>
+                                    @endforeach
+                                </select>
+                            @endif
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <select wire:model="remiseForm.type" class="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100">
                                     <option value="pourcentage">Pourcentage</option>
@@ -214,6 +260,13 @@
                         </div>
                         <div class="mt-6 space-y-3">
                             <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Ajouter un versement</p>
+                            @if ($eleveSelectionne)
+                                <select wire:model="factureSelectionneeId" class="w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                                    @foreach ($eleveSelectionne['factures'] as $factureEleve)
+                                        <option value="{{ $factureEleve['id'] }}">{{ $factureEleve['periode'] }} · {{ number_format($factureEleve['net_a_payer'], 0, ',', ' ') }} FCFA</option>
+                                    @endforeach
+                                </select>
+                            @endif
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <input wire:model="versementForm.montant" type="number" min="0" placeholder="Montant" class="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
                                 <input wire:model="versementForm.date" type="date" class="rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
