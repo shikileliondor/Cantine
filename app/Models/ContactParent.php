@@ -10,6 +10,8 @@ class ContactParent extends Model
 {
     use HasFactory;
 
+    protected $table = 'contacts_parents';
+
     protected $fillable = [
         'eleve_id',
         'nom',
