@@ -23,11 +23,21 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label class="text-xs uppercase tracking-[0.2em] text-slate-500">Période début</label>
-                <input wire:model="periodeDebut" type="month" class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                <select wire:model="periodeDebut" class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                    <option value="">Tous les mois</option>
+                    @foreach ($this->moisDisponibles as $mois)
+                        <option value="{{ $mois }}">{{ $mois }}</option>
+                    @endforeach
+                </select>
             </div>
             <div>
                 <label class="text-xs uppercase tracking-[0.2em] text-slate-500">Période fin</label>
-                <input wire:model="periodeFin" type="month" class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100" />
+                <select wire:model="periodeFin" class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                    <option value="">Tous les mois</option>
+                    @foreach ($this->moisDisponibles as $mois)
+                        <option value="{{ $mois }}">{{ $mois }}</option>
+                    @endforeach
+                </select>
             </div>
             <div>
                 <label class="text-xs uppercase tracking-[0.2em] text-slate-500">Élève</label>

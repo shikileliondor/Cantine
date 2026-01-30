@@ -60,7 +60,7 @@
                                 Facturation
                                 <span class="ml-auto rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-300">Unifié</span>
                             </a>
-                            <a href="{{ route('profile.edit') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('profile.*') ? 'bg-slate-800/70 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                            <a href="{{ route('parametres.index') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('parametres.*') ? 'bg-slate-800/70 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">⚙️</span>
                                 Paramètres
                             </a>
@@ -70,7 +70,8 @@
                     <div class="px-6 pb-6">
                         <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
                             <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Année scolaire</p>
-                            <p class="mt-2 text-lg font-semibold text-white">2024 - 2025</p>
+                            @php($anneeActive = \\App\\Models\\AnneeScolaire::active())
+                            <p class="mt-2 text-lg font-semibold text-white">{{ $anneeActive?->libelle ?? 'Non définie' }}</p>
                             <p class="text-sm text-slate-400">Devise active : XOF</p>
                         </div>
                     </div>
