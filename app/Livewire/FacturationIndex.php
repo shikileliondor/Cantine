@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\AnneeScolaire;
+use App\Models\Eleve;
 use App\Models\Facture;
 use App\Models\Paiement;
 use Illuminate\Support\Collection;
@@ -21,6 +22,7 @@ class FacturationIndex extends Component
 
     public array $facturesSource = [];
     public array $moisDisponibles = [];
+    public array $elevesSource = [];
 
     public array $versementForm = [
         'montant' => '',
@@ -61,24 +63,15 @@ class FacturationIndex extends Component
 
         $this->chargerFacturesSource();
 
-        $this->factureSelectionneeId = $this->facturesSource[0]['id'] ?? null;
-        $this->eleveSelectionneId = $this->facturesSource[0]['eleve_id'] ?? null;
+        $factureInitiale = $this->factures->first(fn (array $facture) => ! empty($facture['id']));
+        $this->factureSelectionneeId = $factureInitiale['id'] ?? null;
+        $this->eleveSelectionneId = $factureInitiale['eleve_id'] ?? null;
     }
 
     public function getFacturesProperty(): Collection
     {
-        return collect($this->facturesSource)
+        $facturesFiltrees = collect($this->facturesSource)
             ->map(fn (array $facture) => $this->calculerFacture($facture))
-            ->when($this->eleveFilter !== '', function (Collection $collection) {
-                return $collection->filter(function (array $facture) {
-                    return Str::of($facture['eleve'])
-                        ->lower()
-                        ->contains(Str::of($this->eleveFilter)->lower());
-                });
-            })
-            ->when($this->statutFilter !== '', function (Collection $collection) {
-                return $collection->filter(fn (array $facture) => $facture['statut'] === $this->statutFilter);
-            })
             ->when($this->periodeDebut !== '' || $this->periodeFin !== '', function (Collection $collection) {
                 return $collection->filter(function (array $facture) {
                     $mois = $this->normaliserMois($facture['periode']);
@@ -99,18 +92,61 @@ class FacturationIndex extends Component
 
                     return true;
                 });
+            })
+            ->when($this->statutFilter !== '', function (Collection $collection) {
+                return $collection->filter(fn (array $facture) => $facture['statut'] === $this->statutFilter);
             });
+
+        $afficherLignesVides = $this->periodeDebut === '' && $this->periodeFin === '' && $this->statutFilter === '';
+
+        $eleves = collect($this->elevesSource)
+            ->when($this->eleveFilter !== '', function (Collection $collection) {
+                return $collection->filter(function (array $eleve) {
+                    return Str::of($eleve['nom'])
+                        ->lower()
+                        ->contains(Str::of($this->eleveFilter)->lower());
+                });
+            });
+
+        return $eleves
+            ->map(function (array $eleve) use ($facturesFiltrees, $afficherLignesVides) {
+                $facture = $facturesFiltrees
+                    ->where('eleve_id', $eleve['id'])
+                    ->sortByDesc(fn (array $factureItem) => $factureItem['mois_sort'] ?? '')
+                    ->first();
+
+                if ($facture) {
+                    return $facture;
+                }
+
+                if (! $afficherLignesVides) {
+                    return null;
+                }
+
+                return [
+                    'id' => null,
+                    'eleve_id' => $eleve['id'],
+                    'eleve' => $eleve['nom'],
+                    'periode' => 'Aucune facture',
+                    'mois_sort' => null,
+                    'montant_brut' => 0,
+                    'total_remises' => 0,
+                    'net_a_payer' => 0,
+                    'total_verse' => 0,
+                    'reste_a_payer' => 0,
+                    'statut' => 'a_creer',
+                    'workflow' => null,
+                    'remises' => [],
+                    'versements' => [],
+                ];
+            })
+            ->filter()
+            ->values();
     }
 
     public function getElevesProperty(): Collection
     {
-        return collect($this->facturesSource)
-            ->unique('eleve_id')
-            ->map(fn (array $facture) => [
-                'id' => $facture['eleve_id'],
-                'nom' => $facture['eleve'],
-            ])
-            ->values();
+        return collect($this->elevesSource);
     }
 
     public function getFactureSelectionneeProperty(): ?array
@@ -187,7 +223,10 @@ class FacturationIndex extends Component
             return;
         }
 
-        $facture = collect($this->facturesSource)->firstWhere('eleve_id', $value);
+        $facture = collect($this->facturesSource)
+            ->filter(fn (array $facture) => $facture['eleve_id'] === $value)
+            ->sortByDesc(fn (array $facture) => $facture['mois_sort'] ?? '')
+            ->first();
         if ($facture) {
             $this->factureSelectionneeId = $facture['id'];
             $this->eleveFilter = $facture['eleve'];
@@ -363,6 +402,20 @@ class FacturationIndex extends Component
 
     private function chargerFacturesSource(): void
     {
+        $this->elevesSource = Eleve::query()
+            ->orderBy('nom')
+            ->orderBy('prenom')
+            ->get()
+            ->map(function (Eleve $eleve) {
+                $nomEleve = trim(($eleve->prenom ?? '') . ' ' . ($eleve->nom ?? ''));
+
+                return [
+                    'id' => $eleve->id,
+                    'nom' => $nomEleve !== '' ? $nomEleve : ($eleve->nom ?? 'Élève'),
+                ];
+            })
+            ->all();
+
         $paiements = Paiement::query()
             ->get()
             ->groupBy(function (Paiement $paiement) {
@@ -416,6 +469,7 @@ class FacturationIndex extends Component
                     'eleve_id' => $facture->eleve_id,
                     'eleve' => $nomEleve,
                     'periode' => $moisFacture !== '' ? $moisFacture : ($moisKey ?? ''),
+                    'mois_sort' => $moisKey,
                     'montant_brut' => (int) round($facture->montant_mensuel),
                     'workflow' => null,
                     'remises' => $remises,
