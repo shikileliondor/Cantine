@@ -13,8 +13,8 @@ class FacturesSeeder extends Seeder
     {
         $mois = Carbon::now()->startOfMonth();
         $montantMensuel = 250.00;
-        $montantRemise = $montantMensuel * 0.10;
-        $montantTotal = $montantMensuel - $montantRemise;
+        $montantRemise = round($montantMensuel * 0.10, 2);
+        $montantTotal = round($montantMensuel - $montantRemise, 2);
 
         $eleves = Eleve::query()->limit(5)->get();
 

@@ -16,12 +16,15 @@ class PaiementsSeeder extends Seeder
         $faker = Faker::create('fr_FR');
 
         foreach (Facture::query()->get() as $facture) {
+            $montant = $faker->randomFloat(2, 50, (float) $facture->montant_total);
+            $datePaiement = Carbon::instance($facture->mois)->addDays($faker->numberBetween(1, 15));
+
             Paiement::query()->create([
                 'eleve_id' => $facture->eleve_id,
                 'facture_id' => $facture->id,
                 'mois' => $facture->mois,
-                'montant' => $faker->randomElement([100, 150, 200]),
-                'date_paiement' => Carbon::now()->subDays(2),
+                'montant' => $montant,
+                'date_paiement' => $datePaiement,
                 'mode_paiement' => $faker->randomElement(['especes', 'cheque', 'virement', 'carte']),
                 'reference' => Str::upper(Str::random(8)),
             ]);

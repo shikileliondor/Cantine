@@ -14,14 +14,18 @@ class ContactsParentsSeeder extends Seeder
         $faker = Faker::create('fr_FR');
 
         foreach (Eleve::query()->pluck('id') as $eleveId) {
-            ContactParent::query()->create([
-                'eleve_id' => $eleveId,
-                'nom' => $faker->name,
-                'lien_parental' => $faker->randomElement(['pere', 'mere', 'tuteur']),
-                'telephone_principal' => $faker->phoneNumber,
-                'telephone_secondaire' => $faker->optional()->phoneNumber,
-                'email' => $faker->optional()->safeEmail,
-            ]);
+            $nombreContacts = $faker->numberBetween(1, 2);
+
+            for ($i = 0; $i < $nombreContacts; $i++) {
+                ContactParent::query()->create([
+                    'eleve_id' => $eleveId,
+                    'nom' => $faker->name,
+                    'lien_parental' => $faker->randomElement(['pere', 'mere', 'tuteur', 'autre']),
+                    'telephone_principal' => $faker->phoneNumber,
+                    'telephone_secondaire' => $faker->optional()->phoneNumber,
+                    'email' => $faker->optional()->safeEmail,
+                ]);
+            }
         }
     }
 }
