@@ -98,6 +98,11 @@
             'a_creer' => 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200',
           ];
         @endphp
+        @php
+          $hasFacture = ! empty($facture['id']);
+          $actionBase = 'rounded-2xl px-4 py-2 text-center font-semibold transition';
+          $actionDisabled = 'opacity-50 cursor-not-allowed';
+        @endphp
         <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/70 p-4">
           <div class="flex items-start justify-between gap-4">
             <div>
@@ -110,7 +115,7 @@
               {{ $statutLabels[$facture['statut']] ?? $facture['statut'] }}
             </span>
           </div>
-          @if ($facture['id'])
+          @if ($hasFacture)
             <div class="mt-4 grid gap-3 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-2">
               <div>
                 <p>Net à payer</p>
@@ -121,13 +126,6 @@
                 <p class="text-sm font-semibold text-rose-700 dark:text-rose-200">{{ number_format($facture['reste_a_payer'], 0, ',', ' ') }} FCFA</p>
               </div>
             </div>
-            <button
-              type="button"
-              wire:click="selectionnerFacture({{ $facture['id'] }})"
-              class="mt-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-100 transition hover:bg-emerald-500/30"
-            >
-              Voir détail
-            </button>
             @if ($isActive)
               <p class="mt-2 text-xs text-emerald-600 dark:text-emerald-300">Facture sélectionnée</p>
             @endif
@@ -136,6 +134,52 @@
               Créez une facture pour commencer à enregistrer les versements et remises.
             </div>
           @endif
+          <div class="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+            @if ($hasFacture)
+              <a
+                href="#facture-detail"
+                wire:click="selectionnerFacture({{ $facture['id'] }})"
+                class="{{ $actionBase }} border border-emerald-500/40 bg-emerald-500/20 text-emerald-700 dark:text-emerald-100 hover:bg-emerald-500/30"
+              >
+                Ajouter un versement
+              </a>
+              <a
+                href="#facture-detail"
+                wire:click="selectionnerFacture({{ $facture['id'] }})"
+                class="{{ $actionBase }} border border-amber-500/40 bg-amber-500/20 text-amber-700 dark:text-amber-100 hover:bg-amber-500/30"
+              >
+                Ajouter une remise
+              </a>
+              <a
+                href="#facture-detail"
+                wire:click="selectionnerFacture({{ $facture['id'] }})"
+                class="{{ $actionBase }} border border-slate-200 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Voir l'historique
+              </a>
+              <a
+                href="{{ route('facturation.export.pdf', $facture['id']) }}"
+                class="{{ $actionBase }} border border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Exporter la fiche facture
+              </a>
+            @else
+              <span class="{{ $actionBase }} {{ $actionDisabled }} border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-100">
+                Ajouter un versement
+              </span>
+              <span class="{{ $actionBase }} {{ $actionDisabled }} border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-100">
+                Ajouter une remise
+              </span>
+              <span class="{{ $actionBase }} {{ $actionDisabled }} border border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200">
+                Voir l'historique
+              </span>
+              <span class="{{ $actionBase }} {{ $actionDisabled }} border border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                Exporter la fiche facture
+              </span>
+            @endif
+          </div>
         </div>
       @empty
         <div class="rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 p-6 text-center text-sm text-slate-600 dark:text-slate-400">
@@ -150,7 +194,7 @@
         $eleveSelectionne = $this->eleveSelectionne;
         $progression = $facture['net_a_payer'] > 0 ? min(100, (int) round(($facture['total_verse'] / $facture['net_a_payer']) * 100)) : 0;
       @endphp
-      <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 p-6">
+      <div id="facture-detail" class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 p-6">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Détail facture</p>
