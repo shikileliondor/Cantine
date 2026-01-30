@@ -116,7 +116,9 @@
                 </thead>
                 <tbody>
                     @forelse ($eleves as $eleve)
-                        @php($cantine = $this->cantineStatus($eleve))
+                        @php
+                            $cantine = $this->cantineStatus($eleve);
+                        @endphp
                         <tr wire:key="eleve-row-{{ $eleve->id }}" class="border-b border-slate-800/60 text-slate-200">
                             <td class="px-6 py-4">
                                 <div class="flex flex-col">
@@ -174,7 +176,9 @@
 
         <div class="grid gap-4 p-6 lg:hidden">
             @forelse ($eleves as $eleve)
-                @php($cantine = $this->cantineStatus($eleve))
+                @php
+                    $cantine = $this->cantineStatus($eleve);
+                @endphp
                 <div wire:key="eleve-card-{{ $eleve->id }}" class="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
                     <div class="flex items-start justify-between">
                         <div>
