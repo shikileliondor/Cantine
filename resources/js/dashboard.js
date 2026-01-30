@@ -2,6 +2,7 @@ import Chart from 'chart.js/auto';
 
 const revenusCanvas = document.getElementById('cantine-revenus-chart');
 const repartitionCanvas = document.getElementById('cantine-repartition-chart');
+const dashboardCharts = window.dashboardCharts ?? {};
 
 if (revenusCanvas) {
     const gradient = revenusCanvas.getContext('2d').createLinearGradient(0, 0, 0, 240);
@@ -11,11 +12,11 @@ if (revenusCanvas) {
     new Chart(revenusCanvas, {
         type: 'line',
         data: {
-            labels: ['Sept', 'Oct', 'Nov', 'Déc', 'Jan', 'Fév', 'Mar'],
+            labels: dashboardCharts?.revenus?.labels ?? [],
             datasets: [
                 {
                     label: 'Recettes',
-                    data: [18, 22, 19, 27, 24, 29, 31],
+                    data: dashboardCharts?.revenus?.data ?? [],
                     borderColor: '#34d399',
                     backgroundColor: gradient,
                     fill: true,
@@ -56,10 +57,10 @@ if (repartitionCanvas) {
     new Chart(repartitionCanvas, {
         type: 'doughnut',
         data: {
-            labels: ['À jour', 'Partiel', 'Retard'],
+            labels: dashboardCharts?.repartition?.labels ?? [],
             datasets: [
                 {
-                    data: [62, 23, 15],
+                    data: dashboardCharts?.repartition?.data ?? [],
                     backgroundColor: ['#34d399', '#fbbf24', '#fb7185'],
                     borderWidth: 0,
                 },
