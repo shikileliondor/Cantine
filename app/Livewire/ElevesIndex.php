@@ -64,7 +64,7 @@ class ElevesIndex extends Component
         }
 
         return Eleve::query()
-            ->with(['classe', 'contactsParents', 'notesEleves'])
+            ->with(['classe', 'contactsParents', 'notesEleves', 'factures', 'paiements.facture'])
             ->find($this->detailEleveId);
     }
 

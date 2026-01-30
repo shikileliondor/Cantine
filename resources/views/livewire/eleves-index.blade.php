@@ -147,7 +147,7 @@
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <button type="button" wire:click="openDetails({{ $eleve->id }})" class="rounded-xl border border-slate-800 px-3 py-2 text-xs text-slate-300 transition hover:border-emerald-400 hover:text-emerald-300">
-                                        Voir
+                                        Fiche
                                     </button>
                                     <a href="{{ route('eleves.edit', $eleve) }}" class="rounded-xl border border-slate-800 px-3 py-2 text-xs text-slate-300 transition hover:border-emerald-400 hover:text-emerald-300">
                                         Modifier
@@ -191,7 +191,7 @@
                     </div>
                     <div class="mt-4 flex flex-wrap gap-2">
                         <button type="button" wire:click="openDetails({{ $eleve->id }})" class="rounded-xl border border-slate-800 px-3 py-2 text-xs text-slate-300">
-                            Voir
+                            Fiche
                         </button>
                         <a href="{{ route('eleves.edit', $eleve) }}" class="rounded-xl border border-slate-800 px-3 py-2 text-xs text-slate-300">
                             Modifier
@@ -252,6 +252,65 @@
                                 <p>Aucun contact renseigné.</p>
                             @endforelse
                         </div>
+                    </div>
+                </div>
+
+                @php
+                    $totalFactures = $detailEleve->factures->sum('montant_total');
+                    $totalVerse = $detailEleve->paiements->sum('montant');
+                    $resteAPayer = max($totalFactures - $totalVerse, 0);
+                @endphp
+
+                <div class="mt-6 space-y-4">
+                    <h4 class="text-sm font-semibold text-white">Récapitulatif cantine</h4>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300">
+                            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Total facturé</p>
+                            <p class="mt-2 text-lg font-semibold text-white">{{ number_format($totalFactures, 0, ',', ' ') }} FCFA</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300">
+                            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Total versé</p>
+                            <p class="mt-2 text-lg font-semibold text-emerald-200">{{ number_format($totalVerse, 0, ',', ' ') }} FCFA</p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300">
+                            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Reste à payer</p>
+                            <p class="mt-2 text-lg font-semibold text-rose-200">{{ number_format($resteAPayer, 0, ',', ' ') }} FCFA</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <h4 class="text-sm font-semibold text-white">Versements</h4>
+                        <span class="text-xs text-slate-500">Total : {{ number_format($totalVerse, 0, ',', ' ') }} FCFA</span>
+                    </div>
+                    <div class="mt-3 space-y-2">
+                        @forelse ($detailEleve->paiements->sortByDesc('date_paiement') as $paiement)
+                            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-300">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">
+                                            {{ $paiement->mois?->format('m/Y') ?? 'Période' }}
+                                        </p>
+                                        <p class="mt-1 text-white">
+                                            {{ $paiement->mode_paiement ?? 'Mode non précisé' }}
+                                            @if ($paiement->reference)
+                                                · Ref {{ $paiement->reference }}
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-slate-500">{{ $paiement->date_paiement?->format('d/m/Y') ?? 'Date inconnue' }}</p>
+                                        <p class="text-lg font-semibold text-emerald-200">{{ number_format($paiement->montant, 0, ',', ' ') }} FCFA</p>
+                                    </div>
+                                </div>
+                                @if ($paiement->facture)
+                                    <p class="mt-2 text-xs text-slate-500">Facture : {{ $paiement->facture->mois?->format('m/Y') ?? '—' }}</p>
+                                @endif
+                            </div>
+                        @empty
+                            <p class="text-sm text-slate-400">Aucun versement enregistré.</p>
+                        @endforelse
                     </div>
                 </div>
 
