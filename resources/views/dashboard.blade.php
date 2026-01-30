@@ -1,7 +1,7 @@
 <x-app-layout>
-    <x-slot name="header">
-        Tableau de bord
-    </x-slot>
+  <x-slot name="header">
+    Tableau de bord
+  </x-slot>
 
     <div class="space-y-8">
         <section class="grid gap-6 lg:grid-cols-3">
@@ -146,8 +146,32 @@
                     @endforeach
                 </div>
             </div>
-        </section>
-    </div>
+            <span class="rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-600 dark:text-rose-300">Retard</span>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/70 p-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Alertes & actions</h3>
+          <button class="rounded-full bg-slate-100 dark:bg-slate-800 px-4 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200">Configurer</button>
+        </div>
+        <div class="mt-6 space-y-4 text-sm text-slate-600 dark:text-slate-300">
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 py-3">
+            <p class="font-semibold text-slate-900 dark:text-white">Relances à envoyer</p>
+            <p class="text-xs text-slate-500">18 parents à notifier cette semaine.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 py-3">
+            <p class="font-semibold text-slate-900 dark:text-white">Tarifs à réviser</p>
+            <p class="text-xs text-slate-500">2 classes sans tarif validé pour le mois prochain.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 py-3">
+            <p class="font-semibold text-slate-900 dark:text-white">Exports PDF & Excel</p>
+            <p class="text-xs text-slate-500">Dernier export généré : 03/09/2024.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
 
     @push('scripts')
         <script>
