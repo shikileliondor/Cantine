@@ -51,25 +51,18 @@
                                 Élèves
                                 <span class="ml-auto rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-300">248</span>
                             </a>
-                            <a href="{{ route('eleves.classes.index') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('eleves.classes.*') ? 'bg-slate-800/70 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
-                                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">🏫</span>
-                                Classes
-                            </a>
-                            <a href="#" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800/60 hover:text-white">
+                            <a href="{{ route('tarifs.index') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('tarifs.*') ? 'bg-slate-800/70 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">💶</span>
                                 Tarifs
                             </a>
-                            <a href="#" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800/60 hover:text-white">
+                            <a href="{{ route('facturation.index') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('facturation.*') ? 'bg-slate-800/70 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">🧾</span>
-                                Factures
+                                Facturation
+                                <span class="ml-auto rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-300">Unifié</span>
                             </a>
-                            <a href="#" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800/60 hover:text-white">
-                                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">💳</span>
-                                Paiements
-                            </a>
-                            <a href="#" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800/60 hover:text-white">
-                                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">🏷️</span>
-                                Remises
+                            <a href="{{ route('profile.edit') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('profile.*') ? 'bg-slate-800/70 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
+                                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">⚙️</span>
+                                Paramètres
                             </a>
                         </div>
                     </nav>
