@@ -10,7 +10,8 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-        @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/cantine.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/cantine.js', 'resources/js/modules/eleves.js'])
+        @livewireStyles
     </head>
     <body class="font-sans antialiased bg-slate-950 text-slate-100">
         <div class="min-h-screen">
@@ -45,12 +46,12 @@
                         </a>
                         <div class="space-y-1">
                             <p class="px-4 pt-4 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Gestion</p>
-                            <a href="#" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800/60 hover:text-white">
+                            <a href="{{ route('eleves.index') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('eleves.index', 'eleves.create', 'eleves.edit') ? 'bg-slate-800/70 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">👧</span>
                                 Élèves
                                 <span class="ml-auto rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-300">248</span>
                             </a>
-                            <a href="#" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-slate-800/60 hover:text-white">
+                            <a href="{{ route('eleves.classes.index') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('eleves.classes.*') ? 'bg-slate-800/70 text-white' : 'text-slate-300 hover:bg-slate-800/60 hover:text-white' }}">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 group-hover:text-emerald-300">🏫</span>
                                 Classes
                             </a>
@@ -130,6 +131,7 @@
             </div>
         </div>
 
+        @livewireScripts
         @stack('scripts')
     </body>
 </html>

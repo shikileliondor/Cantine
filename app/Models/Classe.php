@@ -13,6 +13,7 @@ class Classe extends Model
     protected $fillable = [
         'nom',
         'niveau',
+        'annee_scolaire',
     ];
 
     public function eleves(): HasMany
