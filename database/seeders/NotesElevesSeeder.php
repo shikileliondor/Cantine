@@ -14,11 +14,15 @@ class NotesElevesSeeder extends Seeder
         $faker = Faker::create('fr_FR');
 
         foreach (Eleve::query()->pluck('id') as $eleveId) {
-            NoteEleve::query()->create([
-                'eleve_id' => $eleveId,
-                'type_note' => $faker->randomElement(['allergie', 'regime', 'remarque']),
-                'contenu' => $faker->sentence,
-            ]);
+            $notesCount = $faker->numberBetween(0, 2);
+
+            for ($i = 0; $i < $notesCount; $i++) {
+                NoteEleve::query()->create([
+                    'eleve_id' => $eleveId,
+                    'type_note' => $faker->randomElement(['allergie', 'regime', 'remarque']),
+                    'contenu' => $faker->sentence,
+                ]);
+            }
         }
     }
 }

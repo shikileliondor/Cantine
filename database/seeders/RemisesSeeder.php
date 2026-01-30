@@ -14,7 +14,7 @@ class RemisesSeeder extends Seeder
             'eleve_id' => null,
             'libelle' => 'Remise fratrie',
             'type_remise' => 'pourcentage',
-            'valeur' => 10,
+            'valeur' => 10.00,
             'actif' => true,
         ]);
 
@@ -25,7 +25,7 @@ class RemisesSeeder extends Seeder
                 'eleve_id' => $eleve->id,
                 'libelle' => 'Remise sociale',
                 'type_remise' => 'fixe',
-                'valeur' => 25,
+                'valeur' => 25.00,
                 'actif' => true,
             ]);
         }
