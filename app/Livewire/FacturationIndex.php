@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\AnneeScolaire;
+use App\Models\Facture;
+use App\Models\Paiement;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -57,50 +59,7 @@ class FacturationIndex extends Component
             ->values()
             ->all();
 
-        $periode1 = $this->moisDisponibles[0] ?? 'Mars 2025';
-        $periode2 = $this->moisDisponibles[1] ?? $periode1;
-        $periode3 = $this->moisDisponibles[2] ?? $periode1;
-
-        $this->facturesSource = [
-            [
-                'id' => 1,
-                'eleve_id' => 101,
-                'eleve' => 'Amina Diallo',
-                'periode' => $periode1,
-                'montant_brut' => 35000,
-                'workflow' => 'envoyee',
-                'remises' => [
-                    ['type' => 'pourcentage', 'valeur' => 10, 'commentaire' => 'Fratrie'],
-                ],
-                'versements' => [
-                    ['montant' => 10000, 'date' => '2025-03-05', 'mode' => 'mobile_money', 'reference' => 'MM-2341'],
-                ],
-            ],
-            [
-                'id' => 2,
-                'eleve_id' => 102,
-                'eleve' => 'Idrissa Koné',
-                'periode' => $periode2,
-                'montant_brut' => 28000,
-                'workflow' => 'validee',
-                'remises' => [],
-                'versements' => [
-                    ['montant' => 28000, 'date' => '2025-03-02', 'mode' => 'especes', 'reference' => 'ES-998'],
-                ],
-            ],
-            [
-                'id' => 3,
-                'eleve_id' => 103,
-                'eleve' => 'Sokhna Ndiaye',
-                'periode' => $periode3,
-                'montant_brut' => 35000,
-                'workflow' => 'brouillon',
-                'remises' => [
-                    ['type' => 'montant', 'valeur' => 5000, 'commentaire' => 'Bourse partielle'],
-                ],
-                'versements' => [],
-            ],
-        ];
+        $this->chargerFacturesSource();
 
         $this->factureSelectionneeId = $this->facturesSource[0]['id'] ?? null;
         $this->eleveSelectionneId = $this->facturesSource[0]['eleve_id'] ?? null;
@@ -400,5 +359,69 @@ class FacturationIndex extends Component
     public function render()
     {
         return view('livewire.facturation-index')->layout('layouts.app', ['header' => 'Facturation']);
+    }
+
+    private function chargerFacturesSource(): void
+    {
+        $paiements = Paiement::query()
+            ->get()
+            ->groupBy(function (Paiement $paiement) {
+                if ($paiement->facture_id) {
+                    return 'facture:' . $paiement->facture_id;
+                }
+
+                $moisKey = $paiement->mois?->format('Y-m') ?? 'inconnu';
+
+                return 'eleve:' . $paiement->eleve_id . '|mois:' . $moisKey;
+            });
+
+        $this->facturesSource = Facture::query()
+            ->with('eleve')
+            ->orderBy('mois')
+            ->get()
+            ->map(function (Facture $facture) use ($paiements) {
+                $eleve = $facture->eleve;
+                $nomEleve = trim(($eleve?->prenom ?? '') . ' ' . ($eleve?->nom ?? ''));
+                $nomEleve = $nomEleve !== '' ? $nomEleve : ($eleve?->nom ?? 'Élève');
+
+                $moisFacture = $facture->mois?->locale('fr')->translatedFormat('F Y') ?? '';
+                $moisKey = $facture->mois?->format('Y-m') ?? null;
+
+                $remises = [];
+                if ($facture->montant_remise > 0) {
+                    $remises[] = [
+                        'type' => 'montant',
+                        'valeur' => (int) round($facture->montant_remise),
+                        'commentaire' => 'Remise facture',
+                    ];
+                }
+
+                $paiementsFacture = collect()
+                    ->merge($paiements->get('facture:' . $facture->id, collect()))
+                    ->when($moisKey, fn (Collection $collection) => $collection->merge(
+                        $paiements->get('eleve:' . $facture->eleve_id . '|mois:' . $moisKey, collect())
+                    ))
+                    ->unique('id')
+                    ->values()
+                    ->map(fn (Paiement $paiement) => [
+                        'montant' => (int) round($paiement->montant),
+                        'date' => $paiement->date_paiement?->toDateString(),
+                        'mode' => $paiement->mode_paiement,
+                        'reference' => $paiement->reference,
+                    ])
+                    ->all();
+
+                return [
+                    'id' => $facture->id,
+                    'eleve_id' => $facture->eleve_id,
+                    'eleve' => $nomEleve,
+                    'periode' => $moisFacture !== '' ? $moisFacture : ($moisKey ?? ''),
+                    'montant_brut' => (int) round($facture->montant_mensuel),
+                    'workflow' => null,
+                    'remises' => $remises,
+                    'versements' => $paiementsFacture,
+                ];
+            })
+            ->all();
     }
 }
