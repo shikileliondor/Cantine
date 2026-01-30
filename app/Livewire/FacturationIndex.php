@@ -20,6 +20,7 @@ class FacturationIndex extends Component
 
     public string $periodeDebut = '';
     public string $periodeFin = '';
+    public string $periodeFilter = '';
     public string $eleveFilter = '';
     public string $statutFilter = '';
     public string $nomRecherche = '';
@@ -102,82 +103,27 @@ class FacturationIndex extends Component
 
     public function getFacturesProperty(): Collection
     {
-        $facturesFiltrees = collect($this->facturesSource)
+        return collect($this->facturesSource)
             ->map(fn (array $facture) => $this->calculerFacture($facture))
-            ->when($this->periodeDebut !== '' || $this->periodeFin !== '', function (Collection $collection) {
-                return $collection->filter(function (array $facture) {
-                    $mois = $this->normaliserMois($facture['periode']);
-                    if (! $mois) {
-                        return true;
-                    }
+            ->when($this->periodeFilter !== '', function (Collection $collection) {
+                $periode = $this->normaliserMois($this->periodeFilter);
+                if (! $periode) {
+                    return $collection;
+                }
 
-                    $debut = $this->periodeDebut ? $this->normaliserMois($this->periodeDebut) : null;
-                    $fin = $this->periodeFin ? $this->normaliserMois($this->periodeFin) : null;
-
-                    if ($debut && $mois < $debut) {
-                        return false;
-                    }
-
-                    if ($fin && $mois > $fin) {
-                        return false;
-                    }
-
-                    return true;
-                });
+                return $collection->filter(fn (array $facture) => $this->normaliserMois($facture['periode'] ?? '') === $periode);
             })
             ->when($this->statutFilter !== '', function (Collection $collection) {
                 return $collection->filter(fn (array $facture) => $facture['statut'] === $this->statutFilter);
-            });
-
-        $afficherLignesVides = $this->periodeDebut === '' && $this->periodeFin === '' && $this->statutFilter === '';
-
-        $eleves = collect($this->elevesSource)
-            ->when($this->classeFilter !== '', function (Collection $collection) {
-                return $collection->filter(fn (array $eleve) => (string) $eleve['classe_id'] === (string) $this->classeFilter);
             })
             ->when($this->eleveFilter !== '', function (Collection $collection) {
-                return $collection->filter(function (array $eleve) {
-                    return Str::of($eleve['nom'])
+                return $collection->filter(function (array $facture) {
+                    return Str::of($facture['eleve'])
                         ->lower()
                         ->contains(Str::of($this->eleveFilter)->lower());
                 });
-            });
-
-        return $eleves
-            ->map(function (array $eleve) use ($facturesFiltrees, $afficherLignesVides) {
-                $facture = $facturesFiltrees
-                    ->where('eleve_id', $eleve['id'])
-                    ->sortByDesc(fn (array $factureItem) => $factureItem['mois_sort'] ?? '')
-                    ->first();
-
-                if ($facture) {
-                    return $facture;
-                }
-
-                if (! $afficherLignesVides) {
-                    return null;
-                }
-
-                return [
-                    'id' => null,
-                    'eleve_id' => $eleve['id'],
-                    'eleve' => $eleve['nom'],
-                    'classe' => $eleve['classe'],
-                    'classe_id' => $eleve['classe_id'],
-                    'periode' => 'Aucune facture',
-                    'mois_sort' => null,
-                    'montant_brut' => 0,
-                    'total_remises' => 0,
-                    'net_a_payer' => 0,
-                    'total_verse' => 0,
-                    'reste_a_payer' => 0,
-                    'statut' => 'a_creer',
-                    'workflow' => null,
-                    'remises' => [],
-                    'versements' => [],
-                ];
             })
-            ->filter()
+            ->sortByDesc(fn (array $facture) => $facture['mois_sort'] ?? '')
             ->values();
     }
 
@@ -257,7 +203,6 @@ class FacturationIndex extends Component
     public function appliquerFiltres(): void
     {
         $this->eleveFilter = trim($this->nomRecherche);
-        $this->classeFilter = $this->classeRecherche;
         $this->resetPage();
     }
 
