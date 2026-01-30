@@ -38,6 +38,9 @@ class FacturationIndex extends Component
         'commentaire' => '',
     ];
 
+    public string $remiseRapideType = 'pourcentage';
+    public string $remiseRapideValeur = '10';
+
     public function mount(): void
     {
         $anneeActive = AnneeScolaire::active();
@@ -304,6 +307,70 @@ class FacturationIndex extends Component
             'valeur' => '',
             'commentaire' => '',
         ];
+    }
+
+    public function encaisserSolde(): void
+    {
+        if (! $this->factureSelectionneeId) {
+            return;
+        }
+
+        $facture = $this->factureSelectionnee;
+        if (! $facture) {
+            return;
+        }
+
+        $reste = (int) $facture['reste_a_payer'];
+        if ($reste <= 0) {
+            return;
+        }
+
+        $this->versementForm = [
+            'montant' => (string) $reste,
+            'date' => now()->toDateString(),
+            'mode' => $this->versementForm['mode'] ?: 'especes',
+            'reference' => $this->versementForm['reference'],
+            'commentaire' => 'Encaissement du reste à payer',
+        ];
+
+        $this->ajouterVersement();
+    }
+
+    public function appliquerRemiseRapide(): void
+    {
+        if (! $this->factureSelectionneeId) {
+            return;
+        }
+
+        $facture = $this->factureSelectionnee;
+        if (! $facture) {
+            return;
+        }
+
+        $valeur = (int) $this->remiseRapideValeur;
+        if ($valeur <= 0) {
+            return;
+        }
+
+        if ($this->remiseRapideType === 'pourcentage') {
+            $valeur = min($valeur, 100);
+        } else {
+            $valeur = min($valeur, (int) $facture['montant_brut']);
+        }
+
+        $this->facturesSource = collect($this->facturesSource)->map(function (array $factureItem) use ($valeur) {
+            if ($factureItem['id'] !== $this->factureSelectionneeId) {
+                return $factureItem;
+            }
+
+            $factureItem['remises'][] = [
+                'type' => $this->remiseRapideType,
+                'valeur' => $valeur,
+                'commentaire' => 'Remise rapide',
+            ];
+
+            return $factureItem;
+        })->all();
     }
 
     private function calculerFacture(array $facture): array
