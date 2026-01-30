@@ -101,7 +101,7 @@
         @php
           $hasFacture = ! empty($facture['id']);
           $actionBase = 'rounded-2xl px-4 py-2 text-center font-semibold transition';
-          $actionDisabled = 'opacity-50 cursor-not-allowed';
+          $actionDisabled = 'opacity-100 cursor-default';
         @endphp
         <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/70 p-4">
           <div class="flex items-start justify-between gap-4">
