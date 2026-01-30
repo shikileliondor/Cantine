@@ -70,7 +70,7 @@
                     <div class="px-6 pb-6">
                         <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
                             <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Année scolaire</p>
-                            @php($anneeActive = \\App\\Models\\AnneeScolaire::active())
+                            @php($anneeActive = \App\Models\AnneeScolaire::active())
                             <p class="mt-2 text-lg font-semibold text-white">{{ $anneeActive?->libelle ?? 'Non définie' }}</p>
                             <p class="text-sm text-slate-400">Devise active : XOF</p>
                         </div>
