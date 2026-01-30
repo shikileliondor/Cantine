@@ -3,22 +3,36 @@
 namespace App\Livewire;
 
 use App\Models\AnneeScolaire;
+use App\Models\Classe;
 use App\Models\Eleve;
 use App\Models\Facture;
+use App\Models\NoteEleve;
 use App\Models\Paiement;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class FacturationIndex extends Component
 {
+    use WithPagination;
+
     public string $periodeDebut = '';
     public string $periodeFin = '';
     public string $eleveFilter = '';
     public string $statutFilter = '';
+    public string $nomRecherche = '';
+    public string $classeRecherche = '';
+    public string $classeFilter = '';
+    public int $perPage = 10;
 
     public ?int $factureSelectionneeId = null;
     public ?int $eleveSelectionneId = null;
+    public ?int $noteEleveId = null;
+
+    public string $noteType = 'interne';
+    public string $noteContenu = '';
 
     public array $facturesSource = [];
     public array $moisDisponibles = [];
@@ -40,6 +54,13 @@ class FacturationIndex extends Component
 
     public string $remiseRapideType = 'pourcentage';
     public string $remiseRapideValeur = '10';
+
+    protected $paginationTheme = 'tailwind';
+
+    protected $rules = [
+        'noteType' => 'required|string|max:50',
+        'noteContenu' => 'required|string|min:3',
+    ];
 
     public function mount(): void
     {
@@ -69,6 +90,14 @@ class FacturationIndex extends Component
         $factureInitiale = $this->factures->first(fn (array $facture) => ! empty($facture['id']));
         $this->factureSelectionneeId = $factureInitiale['id'] ?? null;
         $this->eleveSelectionneId = $factureInitiale['eleve_id'] ?? null;
+    }
+
+    public function getClassesProperty(): Collection
+    {
+        return Classe::query()
+            ->orderBy('niveau')
+            ->orderBy('nom')
+            ->get();
     }
 
     public function getFacturesProperty(): Collection
@@ -103,6 +132,9 @@ class FacturationIndex extends Component
         $afficherLignesVides = $this->periodeDebut === '' && $this->periodeFin === '' && $this->statutFilter === '';
 
         $eleves = collect($this->elevesSource)
+            ->when($this->classeFilter !== '', function (Collection $collection) {
+                return $collection->filter(fn (array $eleve) => (string) $eleve['classe_id'] === (string) $this->classeFilter);
+            })
             ->when($this->eleveFilter !== '', function (Collection $collection) {
                 return $collection->filter(function (array $eleve) {
                     return Str::of($eleve['nom'])
@@ -130,6 +162,8 @@ class FacturationIndex extends Component
                     'id' => null,
                     'eleve_id' => $eleve['id'],
                     'eleve' => $eleve['nom'],
+                    'classe' => $eleve['classe'],
+                    'classe_id' => $eleve['classe_id'],
                     'periode' => 'Aucune facture',
                     'mois_sort' => null,
                     'montant_brut' => 0,
@@ -145,6 +179,18 @@ class FacturationIndex extends Component
             })
             ->filter()
             ->values();
+    }
+
+    public function getFacturesPaginatedProperty(): LengthAwarePaginator
+    {
+        $factures = $this->factures;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $items = $factures->forPage($page, $this->perPage)->values();
+
+        return new LengthAwarePaginator($items, $factures->count(), $this->perPage, $page, [
+            'path' => request()->url(),
+            'pageName' => 'page',
+        ]);
     }
 
     public function getElevesProperty(): Collection
@@ -206,6 +252,39 @@ class FacturationIndex extends Component
         if ($facture) {
             $this->eleveSelectionneId = $facture['eleve_id'];
         }
+    }
+
+    public function appliquerFiltres(): void
+    {
+        $this->eleveFilter = trim($this->nomRecherche);
+        $this->classeFilter = $this->classeRecherche;
+        $this->resetPage();
+    }
+
+    public function openNoteModal(int $eleveId): void
+    {
+        $this->resetValidation();
+        $this->noteEleveId = $eleveId;
+        $this->noteType = 'interne';
+        $this->noteContenu = '';
+    }
+
+    public function saveNote(): void
+    {
+        $this->validate();
+
+        if (! $this->noteEleveId) {
+            return;
+        }
+
+        NoteEleve::create([
+            'eleve_id' => $this->noteEleveId,
+            'type_note' => $this->noteType,
+            'contenu' => $this->noteContenu,
+        ]);
+
+        $this->noteEleveId = null;
+        $this->noteContenu = '';
     }
 
     public function updatedFactureSelectionneeId(?int $value): void
@@ -420,6 +499,42 @@ class FacturationIndex extends Component
         return 'payee';
     }
 
+    public function statutBadge(?string $statut): array
+    {
+        return match ($statut) {
+            'payee' => [
+                'label' => 'Soldé',
+                'classes' => 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-200',
+                'dot' => 'bg-emerald-400',
+            ],
+            'partiellement_payee' => [
+                'label' => 'Partiel',
+                'classes' => 'bg-amber-500/10 text-amber-700 dark:text-amber-200',
+                'dot' => 'bg-amber-300',
+            ],
+            'impayee' => [
+                'label' => 'Impayé',
+                'classes' => 'bg-rose-500/10 text-rose-700 dark:text-rose-200',
+                'dot' => 'bg-rose-400',
+            ],
+            'non_concernee' => [
+                'label' => 'Non concerné',
+                'classes' => 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+                'dot' => 'bg-slate-400',
+            ],
+            'a_creer' => [
+                'label' => 'À créer',
+                'classes' => 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+                'dot' => 'bg-slate-400',
+            ],
+            default => [
+                'label' => 'Autre',
+                'classes' => 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+                'dot' => 'bg-slate-400',
+            ],
+        };
+    }
+
     private function normaliserMois(string $periode): ?string
     {
         $valeur = Str::of($periode)->trim()->lower()->replace(['/', '-', '_'], ' ')->__toString();
@@ -470,6 +585,7 @@ class FacturationIndex extends Component
     private function chargerFacturesSource(): void
     {
         $this->elevesSource = Eleve::query()
+            ->with('classe')
             ->orderBy('nom')
             ->orderBy('prenom')
             ->get()
@@ -479,6 +595,8 @@ class FacturationIndex extends Component
                 return [
                     'id' => $eleve->id,
                     'nom' => $nomEleve !== '' ? $nomEleve : ($eleve->nom ?? 'Élève'),
+                    'classe' => $eleve->classe?->nom ?? '—',
+                    'classe_id' => $eleve->classe_id,
                 ];
             })
             ->all();
@@ -496,7 +614,7 @@ class FacturationIndex extends Component
             });
 
         $this->facturesSource = Facture::query()
-            ->with('eleve')
+            ->with(['eleve.classe'])
             ->orderBy('mois')
             ->get()
             ->map(function (Facture $facture) use ($paiements) {
@@ -535,6 +653,8 @@ class FacturationIndex extends Component
                     'id' => $facture->id,
                     'eleve_id' => $facture->eleve_id,
                     'eleve' => $nomEleve,
+                    'classe' => $eleve?->classe?->nom ?? '—',
+                    'classe_id' => $eleve?->classe_id,
                     'periode' => $moisFacture !== '' ? $moisFacture : ($moisKey ?? ''),
                     'mois_sort' => $moisKey,
                     'montant_brut' => (int) round($facture->montant_mensuel),
