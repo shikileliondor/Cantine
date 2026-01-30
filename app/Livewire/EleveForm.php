@@ -6,6 +6,7 @@ use App\Models\Classe;
 use App\Models\ContactParent;
 use App\Models\Eleve;
 use Livewire\Component;
+use Illuminate\Validation\Rule;
 
 class EleveForm extends Component
 {
@@ -36,7 +37,7 @@ class EleveForm extends Component
             'notes_internes' => 'nullable|string',
             'allergies_regime' => 'nullable|string|max:255',
             'parent_nom' => 'nullable|string|max:120',
-            'parent_lien_parental' => 'nullable|string|max:120',
+            'parent_lien_parental' => ['nullable', 'string', Rule::in(ContactParent::LIEN_PARENTAL_INPUTS)],
             'parent_telephone_principal' => 'nullable|string|max:30',
             'parent_telephone_secondaire' => 'nullable|string|max:30',
             'parent_email' => 'nullable|email|max:120',
