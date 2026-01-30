@@ -72,7 +72,7 @@
                 <select wire:model="classeFilter" class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-200 focus:border-emerald-400 focus:outline-none">
                     <option value="">Toutes</option>
                     @foreach ($classes as $classe)
-                        <option value="{{ $classe->id }}">{{ $classe->nom }} @if($classe->niveau) · {{ $classe->niveau }} @endif</option>
+                        <option value="{{ $classe->id }}">{{ $classe->nom }}{{ $classe->niveau ? ' · ' . $classe->niveau : '' }}</option>
                     @endforeach
                 </select>
             </div>
@@ -395,7 +395,7 @@
                     <select wire:model="classeChangeId" class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-200 focus:border-emerald-400 focus:outline-none">
                         <option value="">Non affecté</option>
                         @foreach ($classes as $classe)
-                            <option value="{{ $classe->id }}">{{ $classe->nom }} @if($classe->niveau) · {{ $classe->niveau }} @endif</option>
+                            <option value="{{ $classe->id }}">{{ $classe->nom }}{{ $classe->niveau ? ' · ' . $classe->niveau : '' }}</option>
                         @endforeach
                     </select>
                     @error('classeChangeId') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
