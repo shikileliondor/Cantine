@@ -42,13 +42,16 @@
         </section>
 
         <section class="grid gap-6 xl:grid-cols-3">
+            @php($anneeActive = \App\Models\AnneeScolaire::active())
             <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 xl:col-span-2">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Évolution mensuelle</p>
                         <h2 class="mt-2 text-lg font-semibold text-white">Recettes par mois</h2>
                     </div>
-                    <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-300">Année active</span>
+                    <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-300">
+                        {{ $anneeActive?->libelle ?? 'Année active' }}
+                    </span>
                 </div>
                 <div class="mt-6 h-64">
                     <canvas id="cantine-revenus-chart" class="h-full w-full"></canvas>

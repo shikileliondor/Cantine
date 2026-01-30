@@ -6,6 +6,7 @@ use App\Livewire\ClassesIndex;
 use App\Livewire\EleveForm;
 use App\Livewire\ElevesIndex;
 use App\Livewire\FacturationIndex;
+use App\Livewire\ParametresIndex;
 use App\Livewire\TarifsIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/tarifs', TarifsIndex::class)->name('tarifs.index');
     Route::get('/facturation', FacturationIndex::class)->name('facturation.index');
+    Route::get('/parametres', ParametresIndex::class)->name('parametres.index');
 });
 
 require __DIR__.'/auth.php';

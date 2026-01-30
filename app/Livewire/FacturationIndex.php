@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\AnneeScolaire;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -17,6 +18,7 @@ class FacturationIndex extends Component
     public ?int $eleveSelectionneId = null;
 
     public array $facturesSource = [];
+    public array $moisDisponibles = [];
 
     public array $versementForm = [
         'montant' => '',
@@ -34,12 +36,37 @@ class FacturationIndex extends Component
 
     public function mount(): void
     {
+        $anneeActive = AnneeScolaire::active();
+        $anneeDebut = $anneeActive?->annee_debut ?? (int) now()->format('Y');
+        $anneeFin = $anneeActive?->annee_fin ?? $anneeDebut + 1;
+        $moisBase = $anneeActive?->mois_personnalises ?? [
+            'Septembre',
+            'Octobre',
+            'Novembre',
+            'Décembre',
+            'Janvier',
+            'Février',
+            'Mars',
+            'Avril',
+            'Mai',
+            'Juin',
+        ];
+
+        $this->moisDisponibles = collect($moisBase)
+            ->map(fn (string $mois) => $this->formaterPeriode($mois, $anneeDebut, $anneeFin))
+            ->values()
+            ->all();
+
+        $periode1 = $this->moisDisponibles[0] ?? 'Mars 2025';
+        $periode2 = $this->moisDisponibles[1] ?? $periode1;
+        $periode3 = $this->moisDisponibles[2] ?? $periode1;
+
         $this->facturesSource = [
             [
                 'id' => 1,
                 'eleve_id' => 101,
                 'eleve' => 'Amina Diallo',
-                'periode' => 'Mars 2025',
+                'periode' => $periode1,
                 'montant_brut' => 35000,
                 'workflow' => 'envoyee',
                 'remises' => [
@@ -53,7 +80,7 @@ class FacturationIndex extends Component
                 'id' => 2,
                 'eleve_id' => 102,
                 'eleve' => 'Idrissa Koné',
-                'periode' => 'Mars 2025',
+                'periode' => $periode2,
                 'montant_brut' => 28000,
                 'workflow' => 'validee',
                 'remises' => [],
@@ -65,7 +92,7 @@ class FacturationIndex extends Component
                 'id' => 3,
                 'eleve_id' => 103,
                 'eleve' => 'Sokhna Ndiaye',
-                'periode' => 'Avril 2025',
+                'periode' => $periode3,
                 'montant_brut' => 35000,
                 'workflow' => 'brouillon',
                 'remises' => [
@@ -359,6 +386,15 @@ class FacturationIndex extends Component
         }
 
         return null;
+    }
+
+    private function formaterPeriode(string $mois, int $anneeDebut, int $anneeFin): string
+    {
+        $moisNormalise = Str::of($mois)->trim()->lower()->__toString();
+        $moisDebutAnnee = ['septembre', 'octobre', 'novembre', 'decembre', 'décembre'];
+        $annee = in_array($moisNormalise, $moisDebutAnnee, true) ? $anneeDebut : $anneeFin;
+
+        return Str::of($mois)->trim()->ucfirst()->__toString() . ' ' . $annee;
     }
 
     public function render()
