@@ -116,6 +116,17 @@ class FacturationIndex extends Component
             });
     }
 
+    public function getElevesProperty(): Collection
+    {
+        return collect($this->facturesSource)
+            ->unique('eleve_id')
+            ->map(fn (array $facture) => [
+                'id' => $facture['eleve_id'],
+                'nom' => $facture['eleve'],
+            ])
+            ->values();
+    }
+
     public function getFactureSelectionneeProperty(): ?array
     {
         if (! $this->factureSelectionneeId) {
@@ -181,6 +192,19 @@ class FacturationIndex extends Component
         $facture = collect($this->facturesSource)->firstWhere('id', $value);
         if ($facture) {
             $this->eleveSelectionneId = $facture['eleve_id'];
+        }
+    }
+
+    public function updatedEleveSelectionneId(?int $value): void
+    {
+        if (! $value) {
+            return;
+        }
+
+        $facture = collect($this->facturesSource)->firstWhere('eleve_id', $value);
+        if ($facture) {
+            $this->factureSelectionneeId = $facture['id'];
+            $this->eleveFilter = $facture['eleve'];
         }
     }
 
