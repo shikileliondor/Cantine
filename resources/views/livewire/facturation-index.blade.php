@@ -5,7 +5,7 @@
         <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Vue simplifiée</p>
         <h1 class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Facturation & paiements</h1>
         <p class="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-          Une facture à la fois, l’essentiel visible, le reste masqué.
+          Chaque élève apparaît une seule fois pour saisir les versements, remises et suivre le solde.
         </p>
       </div>
       <details class="relative">
@@ -51,8 +51,8 @@
 
   <section class="space-y-6">
     <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 p-6">
-      <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Factures</p>
-      <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{{ $this->factures->count() }} facture(s)</h2>
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Élèves</p>
+      <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{{ $this->factures->count() }} élève(s)</h2>
     </div>
 
     <div class="grid gap-4 lg:grid-cols-2">
@@ -67,6 +67,7 @@
             'partiellement_payee' => 'Partielle',
             'payee' => 'Payée',
             'non_concernee' => 'Non concernée',
+            'a_creer' => 'À créer',
           ];
           $statutTones = [
             'brouillon' => 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
@@ -76,37 +77,46 @@
             'partiellement_payee' => 'bg-amber-500/20 text-amber-700 dark:text-amber-200',
             'payee' => 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-200',
             'non_concernee' => 'bg-slate-100 text-slate-600 dark:bg-slate-700/40 dark:text-slate-300',
+            'a_creer' => 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200',
           ];
         @endphp
         <div class="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/70 p-4">
           <div class="flex items-start justify-between gap-4">
             <div>
               <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $facture['eleve'] }}</p>
-              <p class="text-xs text-slate-600 dark:text-slate-400">{{ $facture['periode'] }}</p>
+              <p class="text-xs text-slate-600 dark:text-slate-400">
+                {{ $facture['id'] ? 'Dernière facture : ' . $facture['periode'] : 'Aucune facture enregistrée' }}
+              </p>
             </div>
             <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $statutTones[$facture['statut']] ?? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' }}">
               {{ $statutLabels[$facture['statut']] ?? $facture['statut'] }}
             </span>
           </div>
-          <div class="mt-4 grid gap-3 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-2">
-            <div>
-              <p>Net à payer</p>
-              <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ number_format($facture['net_a_payer'], 0, ',', ' ') }} FCFA</p>
+          @if ($facture['id'])
+            <div class="mt-4 grid gap-3 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-2">
+              <div>
+                <p>Net à payer</p>
+                <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ number_format($facture['net_a_payer'], 0, ',', ' ') }} FCFA</p>
+              </div>
+              <div>
+                <p>Reste à payer</p>
+                <p class="text-sm font-semibold text-rose-700 dark:text-rose-200">{{ number_format($facture['reste_a_payer'], 0, ',', ' ') }} FCFA</p>
+              </div>
             </div>
-            <div>
-              <p>Reste à payer</p>
-              <p class="text-sm font-semibold text-rose-700 dark:text-rose-200">{{ number_format($facture['reste_a_payer'], 0, ',', ' ') }} FCFA</p>
+            <button
+              type="button"
+              wire:click="selectionnerFacture({{ $facture['id'] }})"
+              class="mt-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-100 transition hover:bg-emerald-500/30"
+            >
+              Voir détail
+            </button>
+            @if ($isActive)
+              <p class="mt-2 text-xs text-emerald-600 dark:text-emerald-300">Facture sélectionnée</p>
+            @endif
+          @else
+            <div class="mt-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-950/40 px-4 py-3 text-xs text-slate-600 dark:text-slate-300">
+              Créez une facture pour commencer à enregistrer les versements et remises.
             </div>
-          </div>
-          <button
-            type="button"
-            wire:click="selectionnerFacture({{ $facture['id'] }})"
-            class="mt-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-100 transition hover:bg-emerald-500/30"
-          >
-            Voir détail
-          </button>
-          @if ($isActive)
-            <p class="mt-2 text-xs text-emerald-600 dark:text-emerald-300">Facture sélectionnée</p>
           @endif
         </div>
       @empty
