@@ -9,25 +9,14 @@ class RolesSeeder extends Seeder
 {
     public function run(): void
     {
-        Role::query()->insert([
-            [
-                'nom' => 'admin',
-                'description' => 'Administrateur de la cantine',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nom' => 'gestionnaire',
-                'description' => 'Gestionnaire cantine',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nom' => 'caissier',
-                'description' => 'Caissier cantine',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        $roles = SeedDataReader::read('roles.json');
+
+        foreach ($roles as $roleData) {
+            if (!is_array($roleData)) {
+                continue;
+            }
+
+            Role::query()->create($roleData);
+        }
     }
 }

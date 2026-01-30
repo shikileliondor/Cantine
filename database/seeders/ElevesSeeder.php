@@ -4,34 +4,30 @@ namespace Database\Seeders;
 
 use App\Models\Classe;
 use App\Models\Eleve;
-use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 
 class ElevesSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Faker::create('fr_FR');
         $classeIds = Classe::query()->pluck('id')->all();
 
         if ($classeIds === []) {
             return;
         }
 
-        $eleves = [];
+        $eleves = SeedDataReader::read('eleves.json');
 
-        for ($i = 0; $i < 10; $i++) {
-            $eleves[] = [
-                'classe_id' => $faker->randomElement($classeIds),
-                'prenom' => $faker->firstName,
-                'nom' => $faker->lastName,
-                'date_naissance' => $faker->dateTimeBetween('-12 years', '-6 years')->format('Y-m-d'),
-                'statut' => 'actif',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+        foreach ($eleves as $eleveData) {
+            if (!is_array($eleveData)) {
+                continue;
+            }
+
+            if (!isset($eleveData['classe_id'])) {
+                $eleveData['classe_id'] = $classeIds[0];
+            }
+
+            Eleve::query()->create($eleveData);
         }
-
-        Eleve::query()->insert($eleves);
     }
 }
