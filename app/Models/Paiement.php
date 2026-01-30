@@ -18,6 +18,7 @@ class Paiement extends Model
         'date_paiement',
         'mode_paiement',
         'reference',
+        'commentaire',
     ];
 
     protected $casts = [
