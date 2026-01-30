@@ -117,6 +117,24 @@
         </div>
 
         <div class="space-y-6">
+            <div class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Action rapide</p>
+                        <h2 class="mt-2 text-lg font-semibold text-white">Choisir un élève</h2>
+                        <p class="text-sm text-slate-400">Sélectionnez un élève pour appliquer une remise ou enregistrer un versement.</p>
+                    </div>
+                    <div class="w-full sm:w-72">
+                        <label class="text-xs uppercase tracking-[0.2em] text-slate-500">Élève</label>
+                        <select wire:model="eleveSelectionneId" class="mt-2 w-full rounded-2xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100">
+                            <option value="">Sélectionner un élève</option>
+                            @foreach ($this->eleves as $eleve)
+                                <option value="{{ $eleve['id'] }}">{{ $eleve['nom'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
             @if ($this->factureSelectionnee)
                 @php
                     $facture = $this->factureSelectionnee;
