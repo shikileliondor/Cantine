@@ -9,25 +9,14 @@ class ClassesSeeder extends Seeder
 {
     public function run(): void
     {
-        Classe::query()->insert([
-            [
-                'nom' => 'CP',
-                'niveau' => 'Primaire',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nom' => 'CE1',
-                'niveau' => 'Primaire',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nom' => 'CM2',
-                'niveau' => 'Primaire',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        $classes = SeedDataReader::read('classes.json');
+
+        foreach ($classes as $classeData) {
+            if (!is_array($classeData)) {
+                continue;
+            }
+
+            Classe::query()->create($classeData);
+        }
     }
 }
