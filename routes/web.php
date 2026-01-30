@@ -8,6 +8,7 @@ use App\Livewire\ElevesIndex;
 use App\Livewire\FacturationIndex;
 use App\Livewire\ParametresIndex;
 use App\Livewire\TarifsIndex;
+use App\Models\AnneeScolaire;
 use App\Models\Facture;
 use App\Models\Paiement;
 use App\Models\Remise;
@@ -62,11 +63,34 @@ Route::get('/dashboard', function () {
         return round(($count / $repartitionTotal) * 100);
     });
 
+    $statutStyles = [
+        'a_jour' => ['label' => 'Payé', 'class' => 'bg-emerald-500/20 text-emerald-300'],
+        'partiel' => ['label' => 'Partiel', 'class' => 'bg-amber-500/20 text-amber-300'],
+        'retard' => ['label' => 'Retard', 'class' => 'bg-rose-500/20 text-rose-300'],
+    ];
+
     $derniersPaiements = Paiement::query()
         ->with(['eleve.classe', 'facture'])
         ->orderByDesc('date_paiement')
         ->limit(3)
-        ->get();
+        ->get()
+        ->map(function (Paiement $paiement) use ($statutStyles) {
+            $eleve = $paiement->eleve;
+            $classe = $eleve?->classe;
+            $statut = $paiement->facture?->statut ?? 'a_jour';
+            $style = $statutStyles[$statut] ?? $statutStyles['a_jour'];
+            $classeLabel = $classe
+                ? trim(collect([$classe->nom, $classe->niveau])->filter()->implode(' '))
+                : 'Classe non définie';
+
+            return [
+                'eleve_nom' => trim(($eleve->prenom ?? '').' '.($eleve->nom ?? '')) ?: 'Élève inconnu',
+                'classe_label' => $classeLabel,
+                'montant' => $paiement->montant,
+                'statut_label' => $style['label'],
+                'statut_class' => $style['class'],
+            ];
+        });
 
     $alertes = [
         [
@@ -90,6 +114,7 @@ Route::get('/dashboard', function () {
     ];
 
     return view('dashboard', [
+        'anneeActive' => AnneeScolaire::active(),
         'stats' => [
             'encaissements_total' => $encaissementsTotal,
             'encaissements_evolution' => $encaissementsEvolution,

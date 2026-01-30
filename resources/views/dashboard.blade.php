@@ -52,7 +52,6 @@
         </section>
 
         <section class="grid gap-6 xl:grid-cols-3">
-            @php($anneeActive = \App\Models\AnneeScolaire::active())
             <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 xl:col-span-2">
                 <div class="flex items-center justify-between">
                     <div>
@@ -97,33 +96,17 @@
                     <a href="{{ route('facturation.index') }}" class="text-sm font-semibold text-emerald-300">Voir tout</a>
                 </div>
                 <div class="mt-6 space-y-4 text-sm text-slate-300">
-                    @php
-                        $statutStyles = [
-                            'a_jour' => ['label' => 'Payé', 'class' => 'bg-emerald-500/20 text-emerald-300'],
-                            'partiel' => ['label' => 'Partiel', 'class' => 'bg-amber-500/20 text-amber-300'],
-                            'retard' => ['label' => 'Retard', 'class' => 'bg-rose-500/20 text-rose-300'],
-                        ];
-                    @endphp
                     @forelse($derniersPaiements as $paiement)
-                        @php
-                            $eleve = $paiement->eleve;
-                            $classe = $eleve?->classe;
-                            $statut = $paiement->facture?->statut;
-                            $style = $statutStyles[$statut] ?? ['label' => 'Payé', 'class' => 'bg-emerald-500/20 text-emerald-300'];
-                            $classeLabel = $classe
-                                ? trim(collect([$classe->nom, $classe->niveau])->filter()->implode(' '))
-                                : 'Classe non définie';
-                        @endphp
                         <div class="flex items-center justify-between rounded-2xl bg-slate-950/60 px-4 py-3">
                             <div>
-                                <p class="font-semibold text-white">
-                                    {{ trim(($eleve->prenom ?? '').' '.($eleve->nom ?? '')) ?: 'Élève inconnu' }}
-                                </p>
+                                <p class="font-semibold text-white">{{ $paiement['eleve_nom'] }}</p>
                                 <p class="text-xs text-slate-500">
-                                    {{ $classeLabel }} · {{ number_format($paiement->montant, 0, ',', ' ') }} XOF
+                                    {{ $paiement['classe_label'] }} · {{ number_format($paiement['montant'], 0, ',', ' ') }} XOF
                                 </p>
                             </div>
-                            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $style['class'] }}">{{ $style['label'] }}</span>
+                            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $paiement['statut_class'] }}">
+                                {{ $paiement['statut_label'] }}
+                            </span>
                         </div>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-800 px-4 py-6 text-center text-sm text-slate-400">
