@@ -21,6 +21,7 @@ class FacturationIndex extends Component
 
     public ?int $factureSelectionneeId = null;
     public ?int $eleveSelectionneId = null;
+    public string $sectionActive = 'versement';
 
     public array $versementForm = [
         'montant' => '',
@@ -142,13 +143,19 @@ class FacturationIndex extends Component
         ];
     }
 
-    public function selectionnerFacture(int $factureId): void
+    public function selectionnerFacture(int $factureId, string $section = 'versement'): void
     {
+        $this->sectionActive = $section;
         $this->factureSelectionneeId = $factureId;
 
         $facture = Facture::query()->find($factureId);
         $this->eleveSelectionneId = $facture?->eleve_id;
         $this->versementForm['date'] = now()->toDateString();
+    }
+
+    public function changerSection(string $section): void
+    {
+        $this->sectionActive = $section;
     }
 
     public function appliquerFiltres(): void
@@ -193,11 +200,6 @@ class FacturationIndex extends Component
 
         $facture = Facture::query()->with(['paiements', 'remises'])->find($this->factureSelectionneeId);
         if (! $facture) {
-            return;
-        }
-
-        $snapshot = $this->transformerFacture($facture);
-        if ($montant > $snapshot['reste_a_payer']) {
             return;
         }
 
