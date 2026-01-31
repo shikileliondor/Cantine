@@ -1,4 +1,4 @@
-<div class="space-y-6" x-data>
+<div class="space-y-6">
   @php
     $factures = $this->facturesPaginated;
   @endphp
@@ -70,7 +70,10 @@
           @php
             $badge = $this->statutBadge($facture['statut']);
           @endphp
-          <div class="grid grid-cols-[1.6fr_0.8fr_1fr_1fr_0.9fr_1.6fr] items-center gap-4 px-4 py-4">
+          <div
+            class="grid cursor-pointer grid-cols-[1.6fr_0.8fr_1fr_1fr_0.9fr_1.6fr] items-center gap-4 px-4 py-4"
+            wire:click="selectionnerFacture({{ $facture['id'] }})"
+          >
             <div>
               <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $facture['eleve'] }}</p>
             </div>
@@ -92,34 +95,134 @@
             <div class="flex flex-wrap justify-end gap-2 text-xs font-semibold">
               <button
                 type="button"
-                x-on:click="$wire.selectionnerFacture({{ $facture['id'] }}).then(() => $dispatch('open-modal', 'facture-versement'))"
+                wire:click.stop="selectionnerFacture({{ $facture['id'] }}, 'versement')"
                 class="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-emerald-700 transition hover:bg-emerald-500/20 dark:text-emerald-100"
               >
                 ➕ Versement
               </button>
               <button
                 type="button"
-                x-on:click="$wire.selectionnerFacture({{ $facture['id'] }}).then(() => $dispatch('open-modal', 'facture-remise'))"
+                wire:click.stop="selectionnerFacture({{ $facture['id'] }}, 'remise')"
                 class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-700 transition hover:bg-amber-500/20 dark:text-amber-100"
               >
                 💸 Remise
               </button>
               <button
                 type="button"
-                x-on:click="$wire.selectionnerFacture({{ $facture['id'] }}).then(() => $dispatch('open-modal', 'facture-historique'))"
+                wire:click.stop="selectionnerFacture({{ $facture['id'] }}, 'historique')"
                 class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 📜 Historique
               </button>
-              <button
-                type="button"
-                x-on:click="$wire.selectionnerFacture({{ $facture['id'] }}).then(() => $dispatch('open-modal', 'facture-detail'))"
-                class="rounded-xl border border-slate-200 px-3 py-2 text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:text-slate-300"
-              >
-                👁️ Voir
-              </button>
             </div>
           </div>
+          @if ($factureSelectionneeId === $facture['id'])
+            <div class="border-t border-slate-200 bg-slate-50/70 px-4 py-5 dark:border-slate-800 dark:bg-slate-950/40">
+              <div class="flex flex-wrap gap-2 text-xs font-semibold">
+                <button
+                  type="button"
+                  wire:click="changerSection('versement')"
+                  class="{{ $sectionActive === 'versement' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-200' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300' }} rounded-xl border border-slate-200 px-3 py-2 transition hover:bg-emerald-500/10 dark:border-slate-700"
+                >
+                  Versement
+                </button>
+                <button
+                  type="button"
+                  wire:click="changerSection('remise')"
+                  class="{{ $sectionActive === 'remise' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-200' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300' }} rounded-xl border border-slate-200 px-3 py-2 transition hover:bg-amber-500/10 dark:border-slate-700"
+                >
+                  Remise
+                </button>
+                <button
+                  type="button"
+                  wire:click="changerSection('historique')"
+                  class="{{ $sectionActive === 'historique' ? 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300' }} rounded-xl border border-slate-200 px-3 py-2 transition hover:bg-slate-100 dark:border-slate-700"
+                >
+                  Historique
+                </button>
+              </div>
+
+              @if ($sectionActive === 'versement')
+                <div class="mt-4 grid gap-4 text-sm text-slate-700 dark:text-slate-200">
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <input wire:model="versementForm.montant" type="number" min="0" placeholder="Montant" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                    <input wire:model="versementForm.date" type="date" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                  </div>
+                  <select wire:model="versementForm.mode" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+                    <option value="especes">Espèces</option>
+                    <option value="cheque">Chèque</option>
+                    <option value="virement">Virement</option>
+                    <option value="carte">Carte</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <input wire:model="versementForm.reference" type="text" placeholder="Référence (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                    <input wire:model="versementForm.commentaire" type="text" placeholder="Commentaire (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                  </div>
+                  <button wire:click="ajouterVersement" type="button" class="w-full rounded-2xl bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-500/30 dark:text-emerald-200">
+                    Enregistrer le versement
+                  </button>
+                </div>
+              @elseif ($sectionActive === 'remise')
+                <div class="mt-4 space-y-4 text-sm text-slate-700 dark:text-slate-200">
+                  <select wire:model="remiseForm.type" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+                    <option value="fixe">Montant fixe</option>
+                    <option value="pourcentage">Pourcentage</option>
+                  </select>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <input wire:model="remiseForm.valeur" type="number" min="0" placeholder="Valeur" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                    <input wire:model="remiseForm.commentaire" type="text" placeholder="Commentaire (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                  </div>
+                  <button wire:click="ajouterRemise" type="button" class="w-full rounded-2xl bg-amber-500/20 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-500/30 dark:text-amber-200">
+                    Appliquer la remise
+                  </button>
+                </div>
+              @elseif ($sectionActive === 'historique')
+                <div class="mt-4 grid gap-6 text-sm text-slate-700 dark:text-slate-200">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Versements</p>
+                    <div class="mt-3 space-y-2">
+                      @forelse ($this->factureSelectionnee['versements'] as $versement)
+                        <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+                          <div class="flex items-center justify-between">
+                            <p class="font-semibold text-slate-900 dark:text-white">{{ number_format($versement['montant'], 0, ',', ' ') }} FCFA</p>
+                            <span class="text-xs text-slate-600 dark:text-slate-400">{{ $versement['date'] }}</span>
+                          </div>
+                          <p class="text-xs text-slate-600 dark:text-slate-400">
+                            {{ ucfirst(str_replace('_', ' ', $versement['mode'])) }} · {{ $versement['reference'] ?? '—' }}
+                          </p>
+                          @if (!empty($versement['commentaire']))
+                            <p class="text-xs text-slate-500">{{ $versement['commentaire'] }}</p>
+                          @endif
+                        </div>
+                      @empty
+                        <p class="text-slate-500">Aucun versement enregistré.</p>
+                      @endforelse
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Remises</p>
+                    <div class="mt-3 space-y-2">
+                      @forelse ($this->factureSelectionnee['remises'] as $remise)
+                        <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+                          <div class="flex items-center justify-between">
+                            <p class="font-semibold text-slate-900 dark:text-white">
+                              {{ $remise['type'] === 'pourcentage' ? $remise['valeur'].'%' : number_format($remise['valeur'], 0, ',', ' ').' FCFA' }}
+                            </p>
+                            <span class="text-xs text-slate-600 dark:text-slate-400">{{ $remise['date'] ?? '—' }}</span>
+                          </div>
+                          <p class="text-xs text-slate-600 dark:text-slate-400">{{ $remise['commentaire'] ?? 'Remise' }}</p>
+                        </div>
+                      @empty
+                        <p class="text-slate-500">Aucune remise enregistrée.</p>
+                      @endforelse
+                    </div>
+                  </div>
+                </div>
+              @endif
+            </div>
+          @endif
         @empty
           <div class="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
             Aucune facture ne correspond aux filtres.
@@ -133,7 +236,10 @@
         @php
           $badge = $this->statutBadge($facture['statut']);
         @endphp
-        <div class="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <div
+          class="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60"
+          wire:click="selectionnerFacture({{ $facture['id'] }})"
+        >
           <div class="flex items-start justify-between gap-4">
             <div>
               <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $facture['eleve'] }}</p>
@@ -157,33 +263,133 @@
           <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
             <button
               type="button"
-              x-on:click="$wire.selectionnerFacture({{ $facture['id'] }}).then(() => $dispatch('open-modal', 'facture-versement'))"
+              wire:click.stop="selectionnerFacture({{ $facture['id'] }}, 'versement')"
               class="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-emerald-700"
             >
               ➕ Versement
             </button>
             <button
               type="button"
-              x-on:click="$wire.selectionnerFacture({{ $facture['id'] }}).then(() => $dispatch('open-modal', 'facture-remise'))"
+              wire:click.stop="selectionnerFacture({{ $facture['id'] }}, 'remise')"
               class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-700"
             >
               💸 Remise
             </button>
             <button
               type="button"
-              x-on:click="$wire.selectionnerFacture({{ $facture['id'] }}).then(() => $dispatch('open-modal', 'facture-historique'))"
+              wire:click.stop="selectionnerFacture({{ $facture['id'] }}, 'historique')"
               class="rounded-xl border border-slate-200 px-3 py-2 text-slate-700 dark:border-slate-700 dark:text-slate-200"
             >
               📜 Historique
             </button>
-            <button
-              type="button"
-              x-on:click="$wire.selectionnerFacture({{ $facture['id'] }}).then(() => $dispatch('open-modal', 'facture-detail'))"
-              class="rounded-xl border border-slate-200 px-3 py-2 text-slate-600 dark:border-slate-700 dark:text-slate-300"
-            >
-              👁️ Voir
-            </button>
           </div>
+          @if ($factureSelectionneeId === $facture['id'])
+            <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+              <div class="flex flex-wrap gap-2 text-xs font-semibold">
+                <button
+                  type="button"
+                  wire:click="changerSection('versement')"
+                  class="{{ $sectionActive === 'versement' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-200' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300' }} rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700"
+                >
+                  Versement
+                </button>
+                <button
+                  type="button"
+                  wire:click="changerSection('remise')"
+                  class="{{ $sectionActive === 'remise' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-200' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300' }} rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700"
+                >
+                  Remise
+                </button>
+                <button
+                  type="button"
+                  wire:click="changerSection('historique')"
+                  class="{{ $sectionActive === 'historique' ? 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200' : 'bg-white text-slate-600 dark:bg-slate-900 dark:text-slate-300' }} rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700"
+                >
+                  Historique
+                </button>
+              </div>
+
+              @if ($sectionActive === 'versement')
+                <div class="mt-4 grid gap-4 text-sm text-slate-700 dark:text-slate-200">
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <input wire:model="versementForm.montant" type="number" min="0" placeholder="Montant" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                    <input wire:model="versementForm.date" type="date" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                  </div>
+                  <select wire:model="versementForm.mode" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+                    <option value="especes">Espèces</option>
+                    <option value="cheque">Chèque</option>
+                    <option value="virement">Virement</option>
+                    <option value="carte">Carte</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <input wire:model="versementForm.reference" type="text" placeholder="Référence (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                    <input wire:model="versementForm.commentaire" type="text" placeholder="Commentaire (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                  </div>
+                  <button wire:click="ajouterVersement" type="button" class="w-full rounded-2xl bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-500/30 dark:text-emerald-200">
+                    Enregistrer le versement
+                  </button>
+                </div>
+              @elseif ($sectionActive === 'remise')
+                <div class="mt-4 space-y-4 text-sm text-slate-700 dark:text-slate-200">
+                  <select wire:model="remiseForm.type" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+                    <option value="fixe">Montant fixe</option>
+                    <option value="pourcentage">Pourcentage</option>
+                  </select>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <input wire:model="remiseForm.valeur" type="number" min="0" placeholder="Valeur" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                    <input wire:model="remiseForm.commentaire" type="text" placeholder="Commentaire (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
+                  </div>
+                  <button wire:click="ajouterRemise" type="button" class="w-full rounded-2xl bg-amber-500/20 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-500/30 dark:text-amber-200">
+                    Appliquer la remise
+                  </button>
+                </div>
+              @elseif ($sectionActive === 'historique')
+                <div class="mt-4 grid gap-6 text-sm text-slate-700 dark:text-slate-200">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Versements</p>
+                    <div class="mt-3 space-y-2">
+                      @forelse ($this->factureSelectionnee['versements'] as $versement)
+                        <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+                          <div class="flex items-center justify-between">
+                            <p class="font-semibold text-slate-900 dark:text-white">{{ number_format($versement['montant'], 0, ',', ' ') }} FCFA</p>
+                            <span class="text-xs text-slate-600 dark:text-slate-400">{{ $versement['date'] }}</span>
+                          </div>
+                          <p class="text-xs text-slate-600 dark:text-slate-400">
+                            {{ ucfirst(str_replace('_', ' ', $versement['mode'])) }} · {{ $versement['reference'] ?? '—' }}
+                          </p>
+                          @if (!empty($versement['commentaire']))
+                            <p class="text-xs text-slate-500">{{ $versement['commentaire'] }}</p>
+                          @endif
+                        </div>
+                      @empty
+                        <p class="text-slate-500">Aucun versement enregistré.</p>
+                      @endforelse
+                    </div>
+                  </div>
+
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Remises</p>
+                    <div class="mt-3 space-y-2">
+                      @forelse ($this->factureSelectionnee['remises'] as $remise)
+                        <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+                          <div class="flex items-center justify-between">
+                            <p class="font-semibold text-slate-900 dark:text-white">
+                              {{ $remise['type'] === 'pourcentage' ? $remise['valeur'].'%' : number_format($remise['valeur'], 0, ',', ' ').' FCFA' }}
+                            </p>
+                            <span class="text-xs text-slate-600 dark:text-slate-400">{{ $remise['date'] ?? '—' }}</span>
+                          </div>
+                          <p class="text-xs text-slate-600 dark:text-slate-400">{{ $remise['commentaire'] ?? 'Remise' }}</p>
+                        </div>
+                      @empty
+                        <p class="text-slate-500">Aucune remise enregistrée.</p>
+                      @endforelse
+                    </div>
+                  </div>
+                </div>
+              @endif
+            </div>
+          @endif
         </div>
       @empty
         <div class="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
@@ -197,188 +403,4 @@
     </div>
   </section>
 
-  <x-modal name="facture-versement" maxWidth="2xl">
-    <div class="rounded-2xl bg-white p-6 dark:bg-slate-950" x-data="{ showOptions: false }">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Versement</p>
-          <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-            {{ $this->factureSelectionnee['eleve'] ?? 'Aucun élève sélectionné' }}
-          </h3>
-          <p class="text-sm text-slate-600 dark:text-slate-400">
-            Période : {{ $this->factureSelectionnee['periode'] ?? '—' }}
-          </p>
-        </div>
-        <button type="button" class="text-slate-500 hover:text-slate-700" x-on:click="$dispatch('close-modal', 'facture-versement')">✕</button>
-      </div>
-
-      @if ($this->factureSelectionnee)
-        <div class="mt-6 space-y-4 text-sm text-slate-700 dark:text-slate-200">
-          <div class="grid gap-3 sm:grid-cols-2">
-            <input wire:model="versementForm.montant" type="number" min="0" placeholder="Montant" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
-            <input wire:model="versementForm.date" type="date" class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
-          </div>
-          <select wire:model="versementForm.mode" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-            <option value="especes">Espèces</option>
-            <option value="cheque">Chèque</option>
-            <option value="virement">Virement</option>
-            <option value="carte">Carte</option>
-            <option value="autre">Autre</option>
-          </select>
-
-          <button type="button" class="text-left text-xs font-semibold text-slate-500" x-on:click="showOptions = !showOptions">
-            + Ajouter une référence ou un commentaire
-          </button>
-          <div x-show="showOptions" class="space-y-3">
-            <input wire:model="versementForm.reference" type="text" placeholder="Référence (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
-            <input wire:model="versementForm.commentaire" type="text" placeholder="Commentaire (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
-          </div>
-
-          <button wire:click="ajouterVersement" type="button" class="w-full rounded-2xl bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-500/30 dark:text-emerald-200">
-            Enregistrer
-          </button>
-        </div>
-      @else
-        <p class="mt-4 text-sm text-slate-600 dark:text-slate-400">Sélectionnez d'abord une facture.</p>
-      @endif
-    </div>
-  </x-modal>
-
-  <x-modal name="facture-remise" maxWidth="xl">
-    <div class="rounded-2xl bg-white p-6 dark:bg-slate-950">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Remise</p>
-          <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-            {{ $this->factureSelectionnee['eleve'] ?? 'Aucun élève sélectionné' }}
-          </h3>
-          <p class="text-sm text-slate-600 dark:text-slate-400">
-            Période : {{ $this->factureSelectionnee['periode'] ?? '—' }}
-          </p>
-        </div>
-        <button type="button" class="text-slate-500 hover:text-slate-700" x-on:click="$dispatch('close-modal', 'facture-remise')">✕</button>
-      </div>
-
-      @if ($this->factureSelectionnee)
-        <div class="mt-6 space-y-4 text-sm text-slate-700 dark:text-slate-200">
-          <select wire:model="remiseForm.type" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-            <option value="fixe">Montant fixe</option>
-            <option value="pourcentage">Pourcentage</option>
-          </select>
-          <input wire:model="remiseForm.valeur" type="number" min="0" placeholder="Valeur" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
-          <input wire:model="remiseForm.commentaire" type="text" placeholder="Commentaire (optionnel)" class="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100" />
-          <button wire:click="ajouterRemise" type="button" class="w-full rounded-2xl bg-amber-500/20 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-500/30 dark:text-amber-200">
-            Appliquer
-          </button>
-        </div>
-      @else
-        <p class="mt-4 text-sm text-slate-600 dark:text-slate-400">Sélectionnez d'abord une facture.</p>
-      @endif
-    </div>
-  </x-modal>
-
-  <x-modal name="facture-historique" maxWidth="2xl">
-    <div class="rounded-2xl bg-white p-6 dark:bg-slate-950">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Historique</p>
-          <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-            {{ $this->factureSelectionnee['eleve'] ?? 'Aucun élève sélectionné' }}
-          </h3>
-        </div>
-        <button type="button" class="text-slate-500 hover:text-slate-700" x-on:click="$dispatch('close-modal', 'facture-historique')">✕</button>
-      </div>
-
-      @if ($this->factureSelectionnee)
-        <div class="mt-6 space-y-4 text-sm text-slate-700 dark:text-slate-200">
-          <div>
-            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Versements</p>
-            <div class="mt-3 space-y-2">
-              @forelse ($this->factureSelectionnee['versements'] as $versement)
-                <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                  <div class="flex items-center justify-between">
-                    <p class="font-semibold text-slate-900 dark:text-white">{{ number_format($versement['montant'], 0, ',', ' ') }} FCFA</p>
-                    <span class="text-xs text-slate-600 dark:text-slate-400">{{ $versement['date'] }}</span>
-                  </div>
-                  <p class="text-xs text-slate-600 dark:text-slate-400">
-                    {{ ucfirst(str_replace('_', ' ', $versement['mode'])) }} · {{ $versement['reference'] ?? '—' }}
-                  </p>
-                  @if (!empty($versement['commentaire']))
-                    <p class="text-xs text-slate-500">{{ $versement['commentaire'] }}</p>
-                  @endif
-                </div>
-              @empty
-                <p class="text-slate-500">Aucun versement enregistré.</p>
-              @endforelse
-            </div>
-          </div>
-
-          <div>
-            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Remises</p>
-            <div class="mt-3 space-y-2">
-              @forelse ($this->factureSelectionnee['remises'] as $remise)
-                <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
-                  <div class="flex items-center justify-between">
-                    <p class="font-semibold text-slate-900 dark:text-white">
-                      {{ $remise['type'] === 'pourcentage' ? $remise['valeur'].'%' : number_format($remise['valeur'], 0, ',', ' ').' FCFA' }}
-                    </p>
-                    <span class="text-xs text-slate-600 dark:text-slate-400">{{ $remise['date'] ?? '—' }}</span>
-                  </div>
-                  <p class="text-xs text-slate-600 dark:text-slate-400">{{ $remise['commentaire'] ?? 'Remise' }}</p>
-                </div>
-              @empty
-                <p class="text-slate-500">Aucune remise enregistrée.</p>
-              @endforelse
-            </div>
-          </div>
-        </div>
-      @else
-        <p class="mt-4 text-sm text-slate-600 dark:text-slate-400">Historique indisponible.</p>
-      @endif
-    </div>
-  </x-modal>
-
-  <x-modal name="facture-detail" maxWidth="xl">
-    <div class="rounded-2xl bg-white p-6 dark:bg-slate-950">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Détail facture</p>
-          <h3 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-            {{ $this->factureSelectionnee['eleve'] ?? 'Aucun élève sélectionné' }}
-          </h3>
-          <p class="text-sm text-slate-600 dark:text-slate-400">
-            Période : {{ $this->factureSelectionnee['periode'] ?? '—' }}
-          </p>
-        </div>
-        <button type="button" class="text-slate-500 hover:text-slate-700" x-on:click="$dispatch('close-modal', 'facture-detail')">✕</button>
-      </div>
-
-      @if ($this->factureSelectionnee)
-        <div class="mt-6 space-y-3 text-sm text-slate-700 dark:text-slate-200">
-          <div class="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-            <span>Montant brut</span>
-            <span class="font-semibold">{{ number_format($this->factureSelectionnee['montant_brut'], 0, ',', ' ') }} FCFA</span>
-          </div>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-            <span>Remises</span>
-            <span class="font-semibold">{{ number_format($this->factureSelectionnee['total_remises'], 0, ',', ' ') }} FCFA</span>
-          </div>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-            <span>Net à payer</span>
-            <span class="font-semibold">{{ number_format($this->factureSelectionnee['net_a_payer'], 0, ',', ' ') }} FCFA</span>
-          </div>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-            <span>Total versé</span>
-            <span class="font-semibold">{{ number_format($this->factureSelectionnee['total_verse'], 0, ',', ' ') }} FCFA</span>
-          </div>
-          <div class="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-            <span>Reste à payer</span>
-            <span class="font-semibold">{{ number_format($this->factureSelectionnee['reste_a_payer'], 0, ',', ' ') }} FCFA</span>
-          </div>
-        </div>
-      @else
-        <p class="mt-4 text-sm text-slate-600 dark:text-slate-400">Détail indisponible.</p>
-      @endif
-    </div>
-  </x-modal>
 </div>
