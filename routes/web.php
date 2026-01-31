@@ -159,6 +159,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/facturation/export/{facture}/csv', [FacturationExportController::class, 'factureCsv'])
         ->name('facturation.export.csv');
     Route::get('/parametres', ParametresIndex::class)->name('parametres.index');
+    Route::view('/notes-bulletins', 'notes-bulletins')->name('notes-bulletins');
 });
 
 require __DIR__.'/auth.php';
