@@ -15,11 +15,13 @@ class DatabaseSeeder extends Seeder
             RolesSeeder::class,
             UsersSeeder::class,
             ParametresCantineSeeder::class,
+            AnneesScolairesSeeder::class,
             ClassesSeeder::class,
             ElevesSeeder::class,
             ContactsParentsSeeder::class,
             NotesElevesSeeder::class,
             RemisesSeeder::class,
+            TarifsSeeder::class,
             FacturesSeeder::class,
             PaiementsSeeder::class,
         ]);
