@@ -4,6 +4,8 @@
     </x-slot>
 
     @php($anneeActive = \App\Models\AnneeScolaire::active())
+    @php($trimestreActif = $anneeActive?->trimestre_actif)
+    @php($periodeTrimestreActif = $trimestreActif ? ($anneeActive?->trimestres[(int) filter_var($trimestreActif, FILTER_SANITIZE_NUMBER_INT)] ?? null) : null)
 
     <div class="space-y-10">
         <section class="grid gap-6 lg:grid-cols-[2fr,1fr]">
@@ -77,8 +79,18 @@
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span>Trimestre actif</span>
-                            <span class="font-semibold text-slate-900 dark:text-white">Déterminé automatiquement</span>
+                            <span class="font-semibold text-slate-900 dark:text-white">
+                                {{ $trimestreActif ?? 'À définir dans les paramètres' }}
+                            </span>
                         </div>
+                        @if ($periodeTrimestreActif)
+                            <div class="text-xs text-slate-500 dark:text-slate-400">
+                                Période :
+                                {{ isset($periodeTrimestreActif['debut']) ? \Carbon\Carbon::parse($periodeTrimestreActif['debut'])->format('d/m/Y') : '?' }}
+                                →
+                                {{ isset($periodeTrimestreActif['fin']) ? \Carbon\Carbon::parse($periodeTrimestreActif['fin'])->format('d/m/Y') : '?' }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -110,7 +122,7 @@
                             <div>
                                 <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trimestre actif</label>
                                 <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
-                                    Sélection automatique
+                                    {{ $trimestreActif ?? 'Sélection automatique' }}
                                 </div>
                             </div>
                             <div>
@@ -155,7 +167,7 @@
                             <div>
                                 <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Coefficient</label>
                                 <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-200">
-                                    Automatique ou en lecture seule
+                                    {{ $anneeActive?->coefficient_defaut ? number_format($anneeActive->coefficient_defaut, 2, ',', ' ') : 'Automatique ou en lecture seule' }}
                                 </div>
                             </div>
                         </div>

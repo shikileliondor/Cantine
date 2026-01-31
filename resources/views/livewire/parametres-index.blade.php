@@ -36,6 +36,48 @@
       <textarea wire:model="mois_personnalises" rows="4" placeholder="Septembre\nOctobre\nNovembre" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-100"></textarea>
       @error('mois_personnalises') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
     </div>
+    <div class="mt-4">
+      <label class="text-xs uppercase tracking-[0.2em] text-slate-500">Coefficient par défaut</label>
+      <input wire:model="coefficient_defaut" type="number" step="0.01" placeholder="1.00" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-100" />
+      @error('coefficient_defaut') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Utilisé automatiquement lors de la création d'évaluations.</p>
+    </div>
+    <div class="mt-6">
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Périodes des trimestres</p>
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trimestre 1 - début</label>
+          <input wire:model="trimestre_1_debut" type="date" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-100" />
+          @error('trimestre_1_debut') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trimestre 1 - fin</label>
+          <input wire:model="trimestre_1_fin" type="date" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-100" />
+          @error('trimestre_1_fin') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trimestre 2 - début</label>
+          <input wire:model="trimestre_2_debut" type="date" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-100" />
+          @error('trimestre_2_debut') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trimestre 2 - fin</label>
+          <input wire:model="trimestre_2_fin" type="date" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-100" />
+          @error('trimestre_2_fin') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trimestre 3 - début</label>
+          <input wire:model="trimestre_3_debut" type="date" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-100" />
+          @error('trimestre_3_debut') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Trimestre 3 - fin</label>
+          <input wire:model="trimestre_3_fin" type="date" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-700 dark:text-slate-100" />
+          @error('trimestre_3_fin') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+        </div>
+      </div>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Les trimestres correspondent aux périodes actives du module.</p>
+    </div>
     <div class="mt-4 flex items-center gap-3">
       <input id="activer" wire:model="activer" type="checkbox" class="h-4 w-4 rounded border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-emerald-500" />
       <label for="activer" class="text-sm text-slate-600 dark:text-slate-300">Définir comme année active</label>
@@ -59,6 +101,23 @@
               <p class="mt-2 text-xs text-slate-500">
                 Mois : {{ $annee->mois_personnalises ? implode(', ', $annee->mois_personnalises) : 'Aucun mois défini' }}
               </p>
+              <p class="mt-2 text-xs text-slate-500">
+                Coefficient par défaut : {{ $annee->coefficient_defaut ? number_format($annee->coefficient_defaut, 2, ',', ' ') : 'Non défini' }}
+              </p>
+              <div class="mt-2 space-y-1 text-xs text-slate-500">
+                @if ($annee->trimestres)
+                  @foreach ($annee->trimestres as $numero => $periode)
+                    <p>
+                      Trimestre {{ $numero }} :
+                      {{ isset($periode['debut']) ? \Carbon\Carbon::parse($periode['debut'])->format('d/m/Y') : '?' }}
+                      →
+                      {{ isset($periode['fin']) ? \Carbon\Carbon::parse($periode['fin'])->format('d/m/Y') : '?' }}
+                    </p>
+                  @endforeach
+                @else
+                  <p>Trimestres : Non définis</p>
+                @endif
+              </div>
             </div>
             <div class="flex flex-wrap items-center gap-2">
               @if ($annee->est_active)

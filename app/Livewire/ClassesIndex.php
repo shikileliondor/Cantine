@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Classe;
+use App\Models\AnneeScolaire;
 use Livewire\Component;
 
 class ClassesIndex extends Component
@@ -39,7 +40,7 @@ class ClassesIndex extends Component
 
         $this->nom = '';
         $this->niveau = null;
-        $this->annee_scolaire = null;
+        $this->annee_scolaire = $this->anneeScolaireActive();
     }
 
     public function closeForm(): void
@@ -51,6 +52,10 @@ class ClassesIndex extends Component
     public function save(): void
     {
         $validated = $this->validate();
+
+        if (! $validated['annee_scolaire']) {
+            $validated['annee_scolaire'] = $this->anneeScolaireActive();
+        }
 
         Classe::updateOrCreate(
             ['id' => $this->editingId],
@@ -85,5 +90,10 @@ class ClassesIndex extends Component
         return view('livewire.classes-index', [
             'classes' => $classes,
         ])->layout('layouts.app', ['header' => 'Élèves & Classes']);
+    }
+
+    private function anneeScolaireActive(): ?string
+    {
+        return AnneeScolaire::active()?->libelle;
     }
 }
