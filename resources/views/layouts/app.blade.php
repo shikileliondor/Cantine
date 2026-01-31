@@ -61,6 +61,10 @@
                                 Élèves
                                 <span class="ml-auto rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">248</span>
                             </a>
+                            <a wire:navigate href="{{ route('notes-bulletins') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('notes-bulletins') ? 'bg-slate-100 text-slate-900 dark:bg-slate-800/70 dark:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white' }}">
+                                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 group-hover:text-emerald-600 dark:bg-slate-800 dark:text-slate-300 dark:group-hover:text-emerald-300">📘</span>
+                                Notes &amp; bulletins
+                            </a>
                             <a wire:navigate href="{{ route('tarifs.index') }}" class="group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition {{ request()->routeIs('tarifs.*') ? 'bg-slate-100 text-slate-900 dark:bg-slate-800/70 dark:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60 dark:hover:text-white' }}">
                                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-600 group-hover:text-emerald-600 dark:bg-slate-800 dark:text-slate-300 dark:group-hover:text-emerald-300">💶</span>
                                 Tarifs
