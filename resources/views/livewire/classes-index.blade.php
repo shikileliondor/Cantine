@@ -88,8 +88,15 @@
           </div>
           <div>
             <label class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Année scolaire</label>
-            <input type="text" wire:model="annee_scolaire" placeholder="2024-2025" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:border-emerald-400 focus:outline-none" />
-            @error('annee_scolaire') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+            @if ($annee_scolaire)
+              <div class="mt-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
+                {{ $annee_scolaire }}
+              </div>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Récupérée automatiquement depuis les paramètres.</p>
+            @else
+              <input type="text" wire:model="annee_scolaire" placeholder="2024-2025" class="mt-2 w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 px-4 py-3 text-sm text-slate-700 dark:text-slate-200 focus:border-emerald-400 focus:outline-none" />
+              @error('annee_scolaire') <p class="mt-1 text-xs text-rose-400">{{ $message }}</p> @enderror
+            @endif
           </div>
         </div>
 
